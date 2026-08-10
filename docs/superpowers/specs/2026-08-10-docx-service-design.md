@@ -30,16 +30,30 @@ inspection. No web framework, no HTTP layer.
 | --- | --- | --- |
 | Java | 25 | `/usr/bin/java` → Temurin 25.0.1 |
 | Maven compiler | 3.15.0 | `<maven.compiler.release>25</maven.compiler.release>` |
-| docx4j | 11.5.3 | `org.docx4j:docx4j-JAXB-ReferenceImpl` |
+| docx4j | 17.0.2 | `org.docx4j:docx4j-JAXB-ReferenceImpl` |
 | JUnit | 6.1.3 | via `org.junit:junit-bom` |
 | Surefire | 3.5.6 | |
 | exec-maven-plugin | 3.6.3 | runs the sample `main` |
-| slf4j-api | 2.0.17 | `slf4j-simple` at `runtime` scope, for the sample only |
+| slf4j-api | 2.0.18 | `slf4j-simple` at `runtime` scope, for the sample only |
 
 `docx4j-JAXB-ReferenceImpl` pulls in `docx4j-core` and the Glassfish JAXB runtime.
 The bare `org.docx4j:docx4j` artifact is abandoned at 6.1.2 and must not be used.
 Inside an application server that already provides JAXB, swap the dependency for
 `docx4j-JAXB-MOXy`.
+
+Two version traps, both verified against Maven Central's `maven-metadata.xml`:
+
+- **Latest docx4j is 17.0.2, not 11.5.x.** The `search.maven.org` Solr index reports
+  11.5.3 as the latest version; it is stale by a whole major line. Always confirm
+  against `https://repo1.maven.org/maven2/org/docx4j/docx4j-core/maven-metadata.xml`.
+- **In 17.x the `w:*` model classes moved.** `docx4j-openxml-objects` is replaced by
+  `docx4j-generated-objects`. Both are transitive through
+  `docx4j-JAXB-ReferenceImpl`, so neither is declared directly, but the change
+  invalidates 11.x dependency snippets found online.
+
+docx4j 17.0.2 ships Java 11 bytecode (class-file major 55), so it runs on Java 25
+without flags. A prototype exercising the full round trip was compiled and run on
+Temurin 25.0.1 before this spec was finalised.
 
 `release=25` fixes the bytecode and API level regardless of which JVM Maven itself
 runs on. Toolchain pinning is intentionally not configured.
@@ -219,6 +233,19 @@ object: `sectPr` margins are 851 on all four sides, page size is 11906 × 16838,
 heading run's `rPr` carries `sz` 40, bold true, colour `1F4E79`, and the text matches.
 This proves the file is valid and re-readable. The characteristic OOXML failure is a
 document Word refuses to open, which asserting on setters cannot catch.
+
+One asymmetry, established by running it rather than by reading docs: whether a
+`Text` is wrapped in a `jakarta.xml.bind.JAXBElement` depends on how it entered the
+tree, not on the model.
+
+| Origin | `run.getContent().get(0)` is |
+| --- | --- |
+| Freshly built in memory | a bare `org.docx4j.wml.Text` |
+| Reloaded via `WordprocessingMLPackage.load()` | a `JAXBElement<Text>` |
+
+Body paragraphs and runs themselves come back bare in both cases; only `Text` differs.
+Test helpers must tolerate both shapes, or they fail with `ClassCastException`
+depending only on which test they sit in.
 
 **Stream equivalence**: `toByteArray()` and `writeTo(OutputStream)` produce identical
 bytes.
