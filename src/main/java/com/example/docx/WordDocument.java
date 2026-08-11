@@ -2,6 +2,7 @@ package com.example.docx;
 
 import com.example.docx.content.Headings;
 import com.example.docx.page.PageSetup;
+import com.example.docx.part.ImageParts;
 import com.example.docx.style.HeadingStyle;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
@@ -73,6 +74,8 @@ public final class WordDocument {
         private PageSetup pageSetup = PageSetup.a4();
         private String headingText;
         private HeadingStyle headingStyle = HeadingStyle.defaults();
+        private byte[] svgBytes;
+        private byte[] pngBytes;
 
         private Builder() {
         }
@@ -101,6 +104,18 @@ public final class WordDocument {
             return this;
         }
 
+        /**
+         * Adds an SVG image with a PNG fallback, drawn at half the usable page width.
+         *
+         * <p>The SVG must be SVG 1.1: Word's renderer rejects SVG 2 features such as
+         * {@code height="auto"} and 8-digit hex colours that browsers accept.
+         */
+        public Builder svgImage(byte[] svg, byte[] pngFallback) {
+            this.svgBytes = svg;
+            this.pngBytes = pngFallback;
+            return this;
+        }
+
         public WordDocument build() {
             if (headingText == null || headingText.isBlank()) {
                 throw new DocumentGenerationException(
@@ -114,6 +129,11 @@ public final class WordDocument {
                 body.setSectPr(pageSetup.toSectPr());
 
                 mainDocumentPart.getContent().add(Headings.heading(headingText, headingStyle));
+
+                if (svgBytes != null || pngBytes != null) {
+                    mainDocumentPart.getContent().add(ImageParts.svgImage(
+                            pkg, svgBytes, pngBytes, pageSetup.usableWidthTwips() / 2));
+                }
 
                 return new WordDocument(pkg);
             } catch (Docx4JException e) {
