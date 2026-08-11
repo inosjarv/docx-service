@@ -13,7 +13,13 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
-/** Writes a timestamped {@code target/sample-*.docx} so the output can be eyeballed. */
+/**
+ * Writes a timestamped {@code target/sample-*.docx} so the output can be eyeballed.
+ *
+ * <p>Deliberately long enough to run over several pages, so page-flow behaviour is
+ * visible: sections after the first start on a fresh page, headings never strand at a
+ * page foot, and body paragraphs split where they must without leaving a lone line.
+ */
 public final class SampleMain {
 
     /** One colour per section, shared by its heading and its body text. */
@@ -22,46 +28,74 @@ public final class SampleMain {
     private static final List<String> SECTION_TITLES =
             List.of("Revenue", "Operating costs", "Outlook");
 
-    /** Long enough to wrap over several lines, so justification is visible. */
+    /** Long enough to wrap and to push the document over a page boundary. */
     private static final List<List<String>> SECTION_BODIES = List.of(
             List.of(
-                    "Revenue grew twelve per cent quarter on quarter, driven largely by renewals in "
-                            + "the enterprise tier and a smaller but growing contribution from "
+                    "Revenue grew twelve per cent quarter on quarter, driven largely by renewals "
+                            + "in the enterprise tier and a smaller but growing contribution from "
                             + "self-serve. Expansion within existing accounts accounted for rather "
                             + "more of the increase than new logos did, which is the healthier of "
-                            + "the two shapes at this stage.",
+                            + "the two shapes at this stage of the year and suggests the retention "
+                            + "work done over the previous two quarters is beginning to show.",
                     "Regional performance was uneven. EMEA finished ahead of plan on the strength "
-                            + "of two large renewals that had been forecast to slip, while APAC "
-                            + "grew faster in percentage terms from a much smaller base. The "
-                            + "Americas were broadly flat."),
+                            + "of two large renewals that had been forecast to slip into the "
+                            + "following quarter, while APAC grew faster in percentage terms from "
+                            + "a much smaller base. The Americas were broadly flat, which we "
+                            + "attribute to a hiring pause in the first six weeks rather than to "
+                            + "any change in demand.",
+                    "Average contract value rose modestly. The increase came almost entirely from "
+                            + "existing customers moving up a tier rather than from list-price "
+                            + "changes, and the discounting rate was within the band agreed at the "
+                            + "start of the year. Net revenue retention finished slightly above "
+                            + "the internal target.",
+                    "Collections were unremarkable, which is the outcome we want. Days sales "
+                            + "outstanding moved by less than a day and no account of material "
+                            + "size moved into the ninety-day bucket. The one exception has since "
+                            + "been resolved and did not require escalation."),
             List.of(
                     "Operating costs rose more slowly than revenue for the third consecutive "
                             + "quarter. Headcount was the largest single line as expected, though "
                             + "the increase was concentrated in engineering rather than spread "
-                            + "evenly, reflecting the hiring plan agreed at the start of the year.",
+                            + "evenly across functions, reflecting the hiring plan agreed at the "
+                            + "start of the year and the decision to defer two commercial roles.",
                     "Infrastructure spend fell in absolute terms despite higher usage, following "
                             + "the migration completed in the second quarter. We expect that "
-                            + "benefit to be largely one-off and would not model a repeat."),
+                            + "benefit to be largely one-off and would not model a repeat in the "
+                            + "coming period; the underlying growth in usage continues and will "
+                            + "reassert itself once the migration saving has been absorbed.",
+                    "Professional services costs were higher than planned. Most of the variance "
+                            + "sits in two implementations that ran longer than scoped, and the "
+                            + "scoping process has since been changed to require a written "
+                            + "technical review before a start date is committed.",
+                    "Travel and events returned to roughly pre-pandemic levels. This was "
+                            + "anticipated and budgeted, and the return on the two conferences we "
+                            + "sponsored is being measured against pipeline created rather than "
+                            + "against leads captured, which we consider the more honest metric."),
             List.of(
                     "The outlook for the coming quarter is cautiously positive. The renewal book "
                             + "is smaller than the one just closed, so growth will depend more on "
                             + "new business than it has recently, and new business carries a "
-                            + "longer and less predictable cycle.",
+                            + "longer and less predictable cycle. We have not changed the annual "
+                            + "guidance on the strength of one good quarter.",
                     "Two risks are worth naming. The first is concentration: the top ten accounts "
-                            + "remain a large share of recurring revenue. The second is the "
-                            + "pipeline's dependence on a single channel, which we are actively "
-                            + "working to diversify."));
+                            + "remain a large share of recurring revenue, and the loss of any one "
+                            + "of them would be material to the year. The second is the pipeline's "
+                            + "dependence on a single channel, which we are actively working to "
+                            + "diversify but which will take more than one quarter to change.",
+                    "Against those, two things are working in our favour. Gross margin has "
+                            + "improved for four consecutive quarters and shows no sign of "
+                            + "reversing, and the product roadmap for the next two releases is "
+                            + "already committed and staffed, which removes a source of "
+                            + "uncertainty that troubled the previous year.",
+                    "We will report again at the end of the quarter. The reporting pack will "
+                            + "carry the same structure as this one, with the addition of a "
+                            + "cohort view that several readers have asked for and which is now "
+                            + "possible following the data migration."));
 
     private SampleMain() {
     }
 
     public static void main(String[] args) throws IOException {
-        // Justified body text, flush to both margins.
-        ParagraphStyle justifiedBody = ParagraphStyle.builder()
-                .spaceAfterTwips(120)
-                .alignment(Alignment.JUSTIFY)
-                .build();
-
         var builder = WordDocument.builder()
                 .pageSetup(PageSetup.builder().a4().marginsTwips(851).build())
                 .heading("Quarterly Report", TextStyle.builder()
@@ -76,22 +110,38 @@ public final class SampleMain {
         for (int section = 0; section < SECTION_TITLES.size(); section++) {
             String colour = SECTION_COLOURS.get(section);
 
+            // The first section flows on after the chart; the rest open a new page.
+            ParagraphStyle headingStyle = ParagraphStyle.builder()
+                    .spaceBeforeTwips(ParagraphStyle.HEADING_SPACE_BEFORE_TWIPS)
+                    .spaceAfterTwips(ParagraphStyle.HEADING_SPACE_AFTER_TWIPS)
+                    .keepWithNext(true)
+                    .keepLines(true)
+                    .pageBreakBefore(section > 0)
+                    .build();
+
             builder.heading(SECTION_TITLES.get(section), TextStyle.builder()
                     .font("Calibri")
                     .sizePt(11)
                     .bold(true)
                     .color(colour)
-                    .build());
+                    .build(), headingStyle);
 
-            TextStyle bodyStyle = TextStyle.builder()
+            TextStyle bodyText = TextStyle.builder()
                     .font("Calibri")
                     .sizePt(11)
                     .bold(false)
                     .color(colour)
                     .build();
 
+            // Justified, free to split across pages, but never stranding a single line.
+            ParagraphStyle bodyParagraph = ParagraphStyle.builder()
+                    .spaceAfterTwips(ParagraphStyle.BODY_SPACE_AFTER_TWIPS)
+                    .alignment(Alignment.JUSTIFY)
+                    .widowControl(true)
+                    .build();
+
             for (String paragraph : SECTION_BODIES.get(section)) {
-                builder.paragraph(paragraph, bodyStyle, justifiedBody);
+                builder.paragraph(paragraph, bodyText, bodyParagraph);
             }
         }
 

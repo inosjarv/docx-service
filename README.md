@@ -86,6 +86,18 @@ package; `page` only produces a `w:sectPr` fragment for it.
 - **Headings keep with the next paragraph.** `ParagraphStyle.heading()` sets
   `w:keepNext`, so a heading never strands at the foot of a page with its body
   overleaf. Body paragraphs deliberately do not set it.
+- **Three different page-flow controls, three different jobs.** `keepWithNext`
+  glues a paragraph to the next one (headings use it). `keepLines` keeps one
+  paragraph's lines together, moving the whole paragraph rather than splitting
+  it. `widowControl` allows the split but forbids a lone stranded line. For body
+  text `widowControl` is right and `keepLines` is usually wrong — forcing whole
+  paragraphs over leaves large gaps at page ends.
+- **None of them is a guarantee.** A paragraph taller than the text area is split
+  by Word regardless of `keepLines`; the alternative would be losing text.
+- **Page breaks are a paragraph property, not content.**
+  `ParagraphStyle.pageBreakBefore(true)` makes that paragraph start a new page.
+  There is no separate break object to insert, so nothing drifts out of position
+  when the content above it changes.
 - **Justified is `both` in OOXML.** `Alignment.JUSTIFY` emits `w:jc w:val="both"`,
   not `"justify"`. `Alignment.LEFT` emits no `w:jc` at all, since left is Word's
   own default.

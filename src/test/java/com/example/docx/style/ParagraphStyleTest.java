@@ -2,6 +2,7 @@ package com.example.docx.style;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -77,5 +78,66 @@ class ParagraphStyleTest {
     void rejectsNullAlignment() {
         assertThrows(DocumentGenerationException.class,
                 () -> ParagraphStyle.builder().alignment(null).build());
+    }
+
+    @Test
+    void headingNeverSplitsAndKeepsWithNext() {
+        ParagraphStyle style = ParagraphStyle.heading();
+        assertTrue(style.keepWithNext());
+        assertTrue(style.keepLines(), "a heading should not split across pages");
+        assertTrue(style.widowControl());
+        assertEquals(false, style.pageBreakBefore());
+
+        PPr pPr = style.toPPr();
+        assertNotNull(pPr.getKeepNext());
+        assertNotNull(pPr.getKeepLines());
+        assertNotNull(pPr.getWidowControl());
+        assertNull(pPr.getPageBreakBefore(), "pageBreakBefore must be opt-in");
+    }
+
+    @Test
+    void bodyAllowsSplittingButForbidsStrandedLines() {
+        ParagraphStyle style = ParagraphStyle.body();
+        // keepLines on body text leaves large gaps at page ends; widowControl is the
+        // right tool for "do not strand one line".
+        assertEquals(false, style.keepLines());
+        assertTrue(style.widowControl());
+
+        PPr pPr = style.toPPr();
+        assertNull(pPr.getKeepLines(), "body must be free to split");
+        assertNotNull(pPr.getWidowControl());
+    }
+
+    @Test
+    void pageBreakBeforeIsEmittedWhenSet() {
+        PPr pPr = ParagraphStyle.builder().pageBreakBefore(true).build().toPPr();
+        assertNotNull(pPr.getPageBreakBefore());
+        assertTrue(pPr.getPageBreakBefore().isVal());
+    }
+
+    @Test
+    void togglesOffEmitNothingRatherThanFalse() {
+        PPr pPr = ParagraphStyle.builder()
+                .keepWithNext(false)
+                .keepLines(false)
+                .widowControl(false)
+                .pageBreakBefore(false)
+                .build()
+                .toPPr();
+        assertNull(pPr.getKeepNext());
+        assertNull(pPr.getKeepLines());
+        assertNull(pPr.getWidowControl());
+        assertNull(pPr.getPageBreakBefore());
+    }
+
+    @Test
+    void eachToggleIsItsOwnObject() {
+        PPr pPr = ParagraphStyle.builder()
+                .keepWithNext(true).keepLines(true).widowControl(true).pageBreakBefore(true)
+                .build().toPPr();
+        // Sharing one BooleanDefaultTrue across four fields would be hidden aliasing.
+        assertNotSame(pPr.getKeepNext(), pPr.getKeepLines());
+        assertNotSame(pPr.getKeepLines(), pPr.getWidowControl());
+        assertNotSame(pPr.getWidowControl(), pPr.getPageBreakBefore());
     }
 }
