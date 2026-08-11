@@ -3,8 +3,13 @@
 Generates Word (`.docx`) documents from a Java backend with
 [docx4j](https://www.docx4java.org/). Java 25, Maven, no web framework.
 
-Phase one produces a document with configurable A4 page margins and one
-configurable heading. Nothing else.
+Headings, body text, tables and SVG images with PNG fallbacks — appended in
+order, with control over page size, margins, fonts, colours, alignment and how
+content behaves at a page boundary.
+
+**📖 [DOCUMENTATION.md](DOCUMENTATION.md) is the full developer guide** — API
+reference, recipes, the unit traps, and the things that produce a wrong document
+rather than an obvious error. Start there if you are using this as a library.
 
 ## Quick start
 
