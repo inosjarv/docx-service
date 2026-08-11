@@ -55,20 +55,21 @@ write. This was verified end-to-end by prototype before this spec was written.
 
 ### Architecture
 
-Three new files plus additions to `Units` and the facade.
+**No rasteriser, and no new dependencies.** The caller supplies both the SVG and its
+PNG fallback. Batik was evaluated and rejected: `batik-transcoder` plus `batik-codec`
+pull 18 additional jars (including Rhino via `batik-script`), which is disproportionate
+weight for a library whose job is assembling OOXML. Rasterising is a build-time or
+upstream concern, not a runtime one.
+
+One new file plus additions to `Units` and the facade.
 
 ```
 com.example.docx
 ├── Units.java                     + cmToEmu, inchesToEmu (1 inch = 914400 EMU)
-├── image/
-│   └── SvgRasteriser.java         Batik: (svg bytes, target px width) -> PNG bytes.
-│                                  No docx4j at all. Testable standalone.
-├── part/
-│   └── ImageParts.java            Needs the package. Creates the PNG image part,
-│                                  builds the Inline, creates the SVG BinaryPart by
-│                                  hand, attaches the extension. Returns a w:p.
-└── sample/
-    └── DemoChart.java             Generates a bar-chart SVG for the demo.
+└── part/
+    └── ImageParts.java            Needs the package. Creates the PNG image part,
+                                   builds the Inline, creates the SVG BinaryPart by
+                                   hand, attaches the extension. Returns a w:p.
 ```
 
 **Why `part/` and not `content/`.** The phase-one layering rule is that `content/` and
@@ -76,7 +77,8 @@ com.example.docx
 a package part plus a relationship. So images get a `part/` package, where needing the
 package is the defining characteristic. This extends the rule rather than bending it.
 
-`SvgRasteriser` stays outside both, because rasterising has nothing to do with OOXML.
+PNG pixel dimensions are read with `javax.imageio.ImageIO`, which is in the JDK — no
+dependency, and it doubles as validation that the supplied bytes really are an image.
 
 ### API
 
@@ -84,12 +86,12 @@ package is the defining characteristic. This extends the rule rather than bendin
 byte[] docx = WordDocument.builder()
         .pageSetup(PageSetup.a4())
         .heading("Quarterly Report", HeadingStyle.defaults())
-        .svgImage(DemoChart.randomBarChart(), 12.0)   // svg bytes, display width in cm
+        .svgImage(svgBytes, pngFallbackBytes, 12.0)   // display width in cm
         .build()
         .toByteArray();
 ```
 
-`svgImage(byte[] svg, double widthCm)` rasterises the SVG, embeds both parts, and
+`svgImage(byte[] svg, byte[] pngFallback, double widthCm)` embeds both parts and
 appends one paragraph containing the drawing.
 
 **Sizing.** `createImageInline` sizes the image from the PNG's intrinsic pixel
@@ -104,11 +106,14 @@ inline.getExtent().setCy(cy);
 ```
 
 Verified: 12 cm emits `<wp:extent cx="4320000" cy="2592000"/>`. Height comes from the
-rasterised PNG's own pixel ratio, so the image is never distorted. 1 inch = 914,400 EMU.
+PNG's own pixel ratio, so the image is never distorted. 1 inch = 914,400 EMU.
 
-The PNG is rasterised at **2× the display width** in pixels, so the fallback stays
-sharp on high-DPI screens without inflating the file much. At 96 DPI a 12 cm image is
-454 px, so the PNG is rendered 908 px wide.
+The caller owns keeping the PNG visually faithful to the SVG; the library does not
+verify that they match, only that both parse.
+
+Guidance for callers, not enforced: render the PNG at roughly 2× its display width so
+the fallback stays sharp on high-DPI screens. At 96 DPI a 12 cm image is 454 px wide,
+so ~900 px is a sensible fallback. The committed demo PNG is 1600 px.
 
 ### Three constraints that produce silently-wrong files
 
@@ -135,29 +140,42 @@ docx4j writes the SVG's content type as an OPC `Override` on the part name rathe
 a `Default` on the `svg` extension. Both are valid OPC; no action needed, but a test
 asserting a `Default Extension="svg"` entry would fail against a correct file.
 
-### Dependency cost
+### The SVG must be SVG 1.1, not SVG 2
 
-`batik-transcoder` and `batik-codec` at 1.19 pull **18 additional jars** (batik-anim,
--awt-util, -bridge, -codec, -constants, -css, -dom, -ext, -gvt, -i18n, -parser,
--script, -shared-resources, -svg-dom, -svggen, -transcoder, -util, -xml) plus
-`xmlgraphics-commons`. That is a real weight for a library, accepted here because
-rasterising arbitrary SVG is the requirement. `batik-script` brings scripting support
-that this use case does not need; excluding it is a possible later optimisation, not
-part of this phase.
+Word's SVG renderer is strict. Browsers are not. An SVG that looks perfect in Chrome can
+render wrong or not at all in Word, and this is the single likeliest way this feature
+disappoints in practice.
+
+The demo asset supplied for this work exhibited both common failures, each found by
+rasterising it:
+
+| Source | Problem | SVG 1.1-safe form |
+| --- | --- | --- |
+| `<svg height="auto" …>` with no `width` | `auto` is SVG2 sizing. Strict parsers reject it outright — Batik errors with *The attribute "height" of the element `<svg>` is invalid*. | `width="2000" height="1400"` matching the `viewBox` |
+| `fill="#444cf71a"` | 8-digit hex (`#RRGGBBAA`) is CSS Color 4 / SVG2. Strict parsers cannot read it and fall back to **black**, silently filling the chart area solid. | `fill="#444CF7" fill-opacity="0.102"` |
+
+The second is the more dangerous: it does not fail, it renders wrong. The corrected
+asset is committed at `src/test/resources/demo/chart.svg`, with its 1600×1120 PNG
+fallback beside it at `demo/chart.png`.
+
+This is a caller responsibility, not something the library enforces — validating SVG
+profiles is out of scope. The README documents it, because a caller who hits it will
+otherwise blame the library.
 
 ### Error handling
 
 Unchanged contract: `DocumentGenerationException` is the only exception thrown
-deliberately. Malformed SVG, a Batik `TranscoderException`, or a non-positive width all
-surface as `DocumentGenerationException`, with a cause for the Batik failure and
-without one for validation.
+deliberately. Null or empty SVG bytes, PNG bytes `ImageIO` cannot decode, and a
+non-positive width all surface as `DocumentGenerationException` — with a cause where one
+exists, without one for plain validation.
 
 ### Testing
 
-**`SvgRasteriser`, no docx4j:** output starts with the PNG magic bytes
-(`89 50 4E 47`); requested width is honoured; aspect ratio is preserved; malformed SVG
-throws `DocumentGenerationException` with the `TranscoderException` as cause; a
-non-positive width is rejected.
+**Validation, no docx4j:** null/empty SVG rejected; undecodable PNG rejected;
+non-positive width rejected; each throwing `DocumentGenerationException`.
+
+**Sizing:** a 12 cm width on the 1600×1120 demo PNG yields `cx = 4320000` and
+`cy = 3024000`, preserving the 10:7 ratio.
 
 **Round trip, the one that matters:** build a document with an SVG, reload the bytes,
 and assert on the reloaded package — both media parts exist, the SVG part's content
@@ -170,11 +188,23 @@ That last assertion must check the namespace, not merely that the string `svgBli
 appears. The broken first prototype contained the substring `svgBlip` and would have
 passed a naive check while being unreadable by Word.
 
-**Sample:** `SampleMain` writes a document containing the heading and a demo chart.
+**Sample:** `SampleMain` writes a document containing the heading and the demo chart,
+loading `demo/chart.svg` and `demo/chart.png` from the classpath.
+
+### Where the demo assets live
+
+`src/test/resources/demo/`, not `src/main/resources/`. Shipping demo art inside the
+library JAR is the same defect as A1, one layer over. Fix A1 already gives
+`exec-maven-plugin` a `test` classpath scope, so `mvn compile exec:java` reaches them.
+
+`SampleMain` therefore moves from `src/main/java/…/sample/` to
+`src/test/java/…/sample/`. It is a demo entry point, not API; leaving it in `main` while
+its resources live in `test` would produce a class that throws for any consumer who
+called it. After this move the published JAR contains library code only.
 
 ## Out of scope
 
-Floating/anchored images and text wrapping; image captions; multiple images per
-document beyond repeated `svgImage` calls; cropping; alt-text customisation beyond a
-fixed default; raster input formats (JPEG/PNG passed directly by the caller); excluding
-`batik-script`.
+Rasterising SVG at runtime (no Batik — callers supply the PNG); validating that a
+supplied SVG is SVG 1.1-clean, or that the PNG matches the SVG; floating/anchored images
+and text wrapping; image captions; cropping; alt-text customisation beyond a fixed
+default; accepting raster-only input with no SVG.
