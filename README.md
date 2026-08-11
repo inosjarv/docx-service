@@ -47,7 +47,7 @@ you give it, so a controller keeps ownership of the response.
 | --- | --- |
 | `com.example.docx` | `WordDocument` (facade), `Units`, `DocumentGenerationException` |
 | `…​.page` | `PageSetup` — page size and margins |
-| `…​.style` | `TextStyle` — run formatting; `ParagraphStyle` — spacing and keep-with-next |
+| `…​.style` | `TextStyle` — run formatting; `ParagraphStyle` — spacing, alignment and keep-with-next; `Alignment` |
 | `…​.content` | `Paragraphs` — stateless paragraph factory, used for headings and body alike |
 | `…​.part` | `ImageParts` — image parts and the SVG blip extension |
 | `…​.sample` | Runnable `main` (test sources, so it stays out of the jar) |
@@ -86,6 +86,9 @@ package; `page` only produces a `w:sectPr` fragment for it.
 - **Headings keep with the next paragraph.** `ParagraphStyle.heading()` sets
   `w:keepNext`, so a heading never strands at the foot of a page with its body
   overleaf. Body paragraphs deliberately do not set it.
+- **Justified is `both` in OOXML.** `Alignment.JUSTIFY` emits `w:jc w:val="both"`,
+  not `"justify"`. `Alignment.LEFT` emits no `w:jc` at all, since left is Word's
+  own default.
 - **Points, not pixels.** An 11 pt heading is `sizePt(11)`, emitting `w:sz` 22.
   11 px would be 8.25 pt and noticeably smaller.
 

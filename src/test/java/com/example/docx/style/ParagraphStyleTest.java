@@ -8,6 +8,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.DocumentGenerationException;
 import java.math.BigInteger;
+import org.docx4j.wml.JcEnumeration;
 import org.docx4j.wml.PPr;
 import org.junit.jupiter.api.Test;
 
@@ -47,5 +48,34 @@ class ParagraphStyleTest {
                 () -> ParagraphStyle.builder().spaceBeforeTwips(-1).build());
         assertThrows(DocumentGenerationException.class,
                 () -> ParagraphStyle.builder().spaceAfterTwips(-1).build());
+    }
+
+    @Test
+    void defaultsToLeftAndEmitsNoJc() {
+        assertEquals(Alignment.LEFT, ParagraphStyle.body().alignment());
+        // Left is Word's default; an explicit w:jc would be noise.
+        assertNull(ParagraphStyle.body().toPPr().getJc(), "LEFT must emit no w:jc");
+    }
+
+    @Test
+    void justifyEmitsBothNotJustify() {
+        PPr pPr = ParagraphStyle.builder().alignment(Alignment.JUSTIFY).build().toPPr();
+        assertNotNull(pPr.getJc());
+        // OOXML spells justified as "both".
+        assertEquals(JcEnumeration.BOTH, pPr.getJc().getVal());
+    }
+
+    @Test
+    void centerAndRightRoundTripThroughTheEnum() {
+        assertEquals(JcEnumeration.CENTER,
+                ParagraphStyle.builder().alignment(Alignment.CENTER).build().toPPr().getJc().getVal());
+        assertEquals(JcEnumeration.RIGHT,
+                ParagraphStyle.builder().alignment(Alignment.RIGHT).build().toPPr().getJc().getVal());
+    }
+
+    @Test
+    void rejectsNullAlignment() {
+        assertThrows(DocumentGenerationException.class,
+                () -> ParagraphStyle.builder().alignment(null).build());
     }
 }

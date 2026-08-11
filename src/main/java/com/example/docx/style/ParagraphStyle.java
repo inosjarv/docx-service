@@ -6,6 +6,7 @@ import org.docx4j.jaxb.Context;
 import org.docx4j.wml.BooleanDefaultTrue;
 import org.docx4j.wml.ObjectFactory;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.Jc;
 import org.docx4j.wml.PPrBase;
 
 /**
@@ -23,11 +24,13 @@ public final class ParagraphStyle {
     private final int spaceBeforeTwips;
     private final int spaceAfterTwips;
     private final boolean keepWithNext;
+    private final Alignment alignment;
 
     private ParagraphStyle(Builder b) {
         this.spaceBeforeTwips = b.spaceBeforeTwips;
         this.spaceAfterTwips = b.spaceAfterTwips;
         this.keepWithNext = b.keepWithNext;
+        this.alignment = b.alignment;
     }
 
     public static Builder builder() {
@@ -69,6 +72,10 @@ public final class ParagraphStyle {
         return keepWithNext;
     }
 
+    public Alignment alignment() {
+        return alignment;
+    }
+
     /** Builds the {@code w:pPr} for this style. */
     public PPr toPPr() {
         ObjectFactory factory = Context.getWmlObjectFactory();
@@ -78,6 +85,14 @@ public final class ParagraphStyle {
         spacing.setBefore(BigInteger.valueOf(spaceBeforeTwips));
         spacing.setAfter(BigInteger.valueOf(spaceAfterTwips));
         pPr.setSpacing(spacing);
+
+        // Left is Word's own default, so LEFT emits nothing rather than an explicit
+        // w:jc — same principle as keepNext below.
+        if (alignment.jcValue() != null) {
+            Jc jc = factory.createJc();
+            jc.setVal(alignment.jcValue());
+            pPr.setJc(jc);
+        }
 
         // Emitted only when true; an explicit false is not the same as absent.
         if (keepWithNext) {
@@ -94,6 +109,7 @@ public final class ParagraphStyle {
         private int spaceBeforeTwips = 0;
         private int spaceAfterTwips = BODY_SPACE_AFTER_TWIPS;
         private boolean keepWithNext = false;
+        private Alignment alignment = Alignment.LEFT;
 
         private Builder() {
         }
@@ -110,6 +126,14 @@ public final class ParagraphStyle {
 
         public Builder keepWithNext(boolean keepWithNext) {
             this.keepWithNext = keepWithNext;
+            return this;
+        }
+
+        public Builder alignment(Alignment alignment) {
+            if (alignment == null) {
+                throw new DocumentGenerationException("alignment must not be null");
+            }
+            this.alignment = alignment;
             return this;
         }
 

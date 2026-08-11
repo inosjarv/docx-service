@@ -102,7 +102,12 @@ public final class WordDocument {
 
         /** Appends a heading. Each call adds one; calls do not replace each other. */
         public Builder heading(String text, TextStyle style) {
-            P paragraph = Paragraphs.of(text, style, ParagraphStyle.heading());
+            return heading(text, style, ParagraphStyle.heading());
+        }
+
+        /** Appends a heading with explicit paragraph-level formatting. */
+        public Builder heading(String text, TextStyle style, ParagraphStyle paragraphStyle) {
+            P paragraph = Paragraphs.of(text, style, paragraphStyle);
             content.add(pkg -> paragraph);
             return this;
         }
@@ -114,7 +119,12 @@ public final class WordDocument {
 
         /** Appends a body paragraph. */
         public Builder paragraph(String text, TextStyle style) {
-            P paragraph = Paragraphs.of(text, style, ParagraphStyle.body());
+            return paragraph(text, style, ParagraphStyle.body());
+        }
+
+        /** Appends a body paragraph with explicit paragraph-level formatting. */
+        public Builder paragraph(String text, TextStyle style, ParagraphStyle paragraphStyle) {
+            P paragraph = Paragraphs.of(text, style, paragraphStyle);
             content.add(pkg -> paragraph);
             return this;
         }
