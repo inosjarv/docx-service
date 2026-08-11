@@ -218,9 +218,10 @@ Prefer `writeTo` for large documents: it avoids buffering a second full copy.
 | `table(headers, rows, TableStyle, int widthTwips)` | explicit width |
 | `build()` | Requires at least one content item |
 
-**`table(headers, rows, style)` reads the page setup at call time**, unlike `svgImage`
-which defers to `build()`. Call `pageSetup(...)` first, or pass an explicit width —
-otherwise a later `pageSetup` call leaves the table sized for the old page.
+**`table(headers, rows, style)` defers the page setup to `build()`**, the same as
+`svgImage`. It may be called before or after `pageSetup(...)` with the same result. Pass
+an explicit width with the four-argument overload to pin the width regardless of page
+setup.
 
 ### `PageSetup`
 

@@ -146,15 +146,21 @@ public final class WordDocument {
         }
 
         /**
-         * Appends a table spanning the full usable page width.
+         * Appends a table spanning the full usable page width, followed by a spacer
+         * paragraph.
          *
-         * <p>The width is read from the current page setup <em>now</em>, not at
-         * {@code build()}. Call {@link #pageSetup(PageSetup)} before this, or use the
-         * four-argument overload with an explicit width — otherwise a later
-         * {@code pageSetup} call leaves the table sized for the old page.
+         * <p>The width is resolved from {@link #pageSetup(PageSetup)} at {@code build()}
+         * time, so this method may be called before or after {@code pageSetup(...)} —
+         * whichever {@code pageSetup} is in effect when {@code build()} runs wins. Use the
+         * four-argument overload to pin an explicit width regardless of page setup.
          */
         public Builder table(List<String> headers, List<List<String>> rows, TableStyle style) {
-            return table(headers, rows, style, pageSetup.usableWidthTwips());
+            content.add(pkg -> Tables.of(headers, rows, style, pageSetup.usableWidthTwips()));
+            // Two adjacent tables merge into one in Word, and a body ending in a table
+            // rather than a paragraph is irregular. A spacer prevents both.
+            P spacer = Context.getWmlObjectFactory().createP();
+            content.add(pkg -> spacer);
+            return this;
         }
 
         /** Appends a table of the given width, followed by a spacer paragraph. */

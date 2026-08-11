@@ -68,4 +68,26 @@ class TableDocumentTest {
         assertEquals(List.of("P", "TBL", "P", "P"), shape(reload(bytes)),
                 "expected paragraph, table, spacer, paragraph");
     }
+
+    @Test
+    void tableWidthReflectsPageSetupSetAfterTable() throws Exception {
+        PageSetup wide = PageSetup.builder()
+                .pageSizeTwips(20000, 15840)
+                .marginsTwips(851)
+                .build();
+
+        byte[] bytes = WordDocument.builder()
+                .table(HEADERS, ROWS, TableStyle.defaults())
+                .pageSetup(wide)
+                .build()
+                .toByteArray();
+
+        Tbl table = (Tbl) unwrapped(reload(bytes)).stream()
+                .filter(o -> o instanceof Tbl).findFirst().orElseThrow();
+
+        int sum = table.getTblGrid().getGridCol().stream()
+                .mapToInt(c -> c.getW().intValue()).sum();
+        assertEquals(wide.usableWidthTwips(), sum,
+                "table() called before pageSetup() should still size to the final page setup");
+    }
 }
