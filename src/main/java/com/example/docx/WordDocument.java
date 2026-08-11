@@ -145,7 +145,14 @@ public final class WordDocument {
             return this;
         }
 
-        /** Appends a table spanning the full usable page width. */
+        /**
+         * Appends a table spanning the full usable page width.
+         *
+         * <p>The width is read from the current page setup <em>now</em>, not at
+         * {@code build()}. Call {@link #pageSetup(PageSetup)} before this, or use the
+         * four-argument overload with an explicit width — otherwise a later
+         * {@code pageSetup} call leaves the table sized for the old page.
+         */
         public Builder table(List<String> headers, List<List<String>> rows, TableStyle style) {
             return table(headers, rows, style, pageSetup.usableWidthTwips());
         }

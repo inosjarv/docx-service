@@ -3,7 +3,11 @@ package com.example.docx.sample;
 import com.example.docx.WordDocument;
 import com.example.docx.page.PageSetup;
 import com.example.docx.style.Alignment;
+import com.example.docx.style.BorderLine;
+import com.example.docx.style.Edge;
 import com.example.docx.style.ParagraphStyle;
+import com.example.docx.style.TableBorderStyle;
+import com.example.docx.style.TableStyle;
 import com.example.docx.style.TextStyle;
 import java.io.IOException;
 import java.io.InputStream;
@@ -105,7 +109,23 @@ public final class SampleMain {
                         .italic(false)
                         .color("#1F4E79")
                         .build())
-                .svgImage(resource("/demo/chart.svg"), resource("/demo/chart.png"));
+                .svgImage(resource("/demo/chart.svg"), resource("/demo/chart.png"))
+                .table(
+                        List.of("Region", "Revenue", "Change", "Share"),
+                        List.of(
+                                List.of("EMEA", "1 240", "+8%", "42%"),
+                                List.of("APAC", "980", "+21%", "33%"),
+                                List.of("Americas", "740", "0%", "25%")),
+                        TableStyle.builder()
+                                // A single rule under the header, nothing else.
+                                .headerBorder(TableBorderStyle.builder()
+                                        .color("#1F4E79").widthPt(1.0)
+                                        .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
+                                // Hairline rules between rows.
+                                .bodyBorder(TableBorderStyle.builder()
+                                        .color("#BFBFBF").widthPt(0.5)
+                                        .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
+                                .build());
 
         for (int section = 0; section < SECTION_TITLES.size(); section++) {
             String colour = SECTION_COLOURS.get(section);

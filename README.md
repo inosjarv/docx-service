@@ -49,12 +49,35 @@ you give it, so a controller keeps ownership of the response.
 | `…​.page` | `PageSetup` — page size and margins |
 | `…​.style` | `TextStyle` — run formatting; `ParagraphStyle` — spacing, alignment and keep-with-next; `Alignment` |
 | `…​.content` | `Paragraphs` — stateless paragraph factory, used for headings and body alike |
+| `…​.style` | also `TableStyle`, `TableBorderStyle`, `BorderLine`, `Edge` |
 | `…​.part` | `ImageParts` — image parts and the SVG blip extension |
 | `…​.sample` | Runnable `main` (test sources, so it stays out of the jar) |
 
 `content` and `style` never touch `WordprocessingMLPackage`, so they are pure
 functions of their arguments and need no fixtures. The facade owns the
 package; `page` only produces a `w:sectPr` fragment for it.
+
+## Tables
+
+```java
+builder.table(
+        List.of("Region", "Revenue"),
+        List.of(List.of("EMEA", "1 240")),
+        TableStyle.builder()
+                .headerBorder(TableBorderStyle.bottomOnly("#1F4E79", 1.0))
+                .bodyBorder(TableBorderStyle.bottomOnly("#BFBFBF", 0.5))
+                .build());
+```
+
+Borders are chosen per cell edge, separately for the header and the body:
+
+| Wanted | Set |
+| --- | --- |
+| Rule under the header | header → `BOTTOM` |
+| Rules between body rows | body → `BOTTOM` |
+| Full grid | body → all four |
+
+`TableBorderStyle.none()`, or a style with no edges, draws nothing.
 
 ## Things that bite
 
@@ -103,6 +126,18 @@ package; `page` only produces a `w:sectPr` fragment for it.
   own default.
 - **Points, not pixels.** An 11 pt heading is `sizePt(11)`, emitting `w:sz` 22.
   11 px would be 8.25 pt and noticeably smaller.
+- **An empty `w:tc` makes the document unopenable.** Not misrendered — unopenable.
+  Every cell gets a paragraph, including blank and null ones.
+- **`w:tblGrid` is mandatory**, with a fixed layout. Without both, Word auto-fits
+  to content and the same table renders differently in different clients.
+- **Border width is in eighths of a point** — a third unit alongside twips and
+  half-points. 1 pt is `w:sz="8"`; a 0.5 pt hairline is `4`.
+- **A spacer paragraph follows every table.** Two adjacent tables merge into one
+  in Word, and a body ending in a table is irregular.
+- **Table borders are per cell edge, not `w:tblBorders`.** Table-level borders
+  cannot give the header a border different from the body's. One consequence:
+  adjacent cells each own their edges, so `LEFT` + `RIGHT` on the body puts two
+  borders between columns and the thicker one wins.
 
 ## Notes
 

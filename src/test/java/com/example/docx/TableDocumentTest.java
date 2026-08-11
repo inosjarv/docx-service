@@ -1,7 +1,6 @@
 package com.example.docx;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.page.PageSetup;
 import com.example.docx.style.TableStyle;
