@@ -89,4 +89,13 @@ class PageSetupTest {
                 () -> PageSetup.builder().a4()
                         .top(2_000_000_000).bottom(2_000_000_000).build());
     }
+
+    @Test
+    void usableWidthSubtractsBothSideMargins() {
+        assertEquals(10204, PageSetup.a4().usableWidthTwips());       // 11906 - 851 - 851
+        assertEquals(7906, PageSetup.builder().a4().marginsTwips(2000).build()
+                .usableWidthTwips());                                 // 11906 - 4000
+        assertEquals(10906, PageSetup.builder().a4().left(600).right(400).build()
+                .usableWidthTwips());                                 // 11906 - 1000
+    }
 }

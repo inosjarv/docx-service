@@ -73,6 +73,11 @@ public final class PageSetup {
         return leftTwips;
     }
 
+    /** Page width less both side margins: the width text and images may occupy. */
+    public int usableWidthTwips() {
+        return pageWidthTwips - leftTwips - rightTwips;
+    }
+
     /** Builds the {@code w:sectPr} describing this page. */
     public SectPr toSectPr() {
         ObjectFactory factory = Context.getWmlObjectFactory();

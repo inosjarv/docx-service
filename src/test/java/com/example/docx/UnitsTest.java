@@ -44,4 +44,18 @@ class UnitsTest {
         assertThrows(DocumentGenerationException.class, () -> Units.inchesToTwips(1e9));
         assertThrows(DocumentGenerationException.class, () -> Units.pointsToHalfPoints(1e12));
     }
+
+    @Test
+    void twipsToEmu() {
+        // 914400 / 1440 = 635 exactly, so this conversion never rounds.
+        assertEquals(635L, Units.twipsToEmu(1));
+        assertEquals(914400L, Units.twipsToEmu(1440));
+        assertEquals(0L, Units.twipsToEmu(0));
+        assertEquals(3_239_770L, Units.twipsToEmu(5102));
+    }
+
+    @Test
+    void twipsToEmuRejectsNegatives() {
+        assertThrows(DocumentGenerationException.class, () -> Units.twipsToEmu(-1));
+    }
 }

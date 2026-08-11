@@ -11,6 +11,7 @@ public final class Units {
 
     private static final double TWIPS_PER_INCH = 1440.0;
     private static final double CM_PER_INCH = 2.54;
+    private static final int EMU_PER_TWIP = 635;
 
     private Units() {
     }
@@ -28,6 +29,14 @@ public final class Units {
     public static int pointsToHalfPoints(double points) {
         check(points, "points");
         return roundHalfUp(points * 2.0, "points");
+    }
+
+    /** 1 twip is exactly 635 EMU, since 914400 / 1440 divides evenly. */
+    public static long twipsToEmu(int twips) {
+        if (twips < 0) {
+            throw new DocumentGenerationException("twips must not be negative, got " + twips);
+        }
+        return (long) twips * EMU_PER_TWIP;
     }
 
     private static void check(double value, String unit) {
