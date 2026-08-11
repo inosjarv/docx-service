@@ -126,6 +126,15 @@ public final class ImageParts {
         // Mandatory, and false by default. Left off, the prefixed name parses as a
         // literal element in NO namespace and Word silently ignores the SVG.
         factory.setNamespaceAware(true);
+        // The string parsed here is fully library-constructed today (fixed namespaces
+        // plus a docx4j-generated relationship id), so this isn't reachable yet — but
+        // hardening now means a future edit that threads less-trusted input through this
+        // factory doesn't reintroduce XXE by accident.
+        factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", true);
+        factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
+        factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+        factory.setXIncludeAware(false);
+        factory.setExpandEntityReferences(false);
         Element svgBlip = factory.newDocumentBuilder()
                 .parse(new InputSource(new StringReader(
                         "<asvg:svgBlip xmlns:asvg=\"" + ASVG_NS
