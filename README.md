@@ -13,7 +13,7 @@ JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test
 ```
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn compile exec:java
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java
 ```
 
 The second writes `target/sample.docx`.
@@ -40,8 +40,9 @@ byte[] docx = WordDocument.builder()
 Both nested builders default every field, so `PageSetup.a4()` and
 `HeadingStyle.defaults()` are valid alone.
 
-For large documents prefer `writeTo(out)` over `toByteArray()`, so the whole
-file never sits in heap.
+For large documents prefer `writeTo(out)` over `toByteArray()`: it avoids
+buffering a second full copy of the file. `writeTo` does not close the stream
+you give it, so a controller keeps ownership of the response.
 
 ## Layout
 
@@ -54,8 +55,8 @@ file never sits in heap.
 | `…​.sample` | Runnable `main` |
 
 `content` and `style` never touch `WordprocessingMLPackage`, so they are pure
-functions of their arguments and need no fixtures. `page` and the facade own
-the package.
+functions of their arguments and need no fixtures. The facade owns the
+package; `page` only produces a `w:sectPr` fragment for it.
 
 ## Things that bite
 

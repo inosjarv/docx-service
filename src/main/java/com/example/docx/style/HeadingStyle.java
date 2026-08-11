@@ -3,6 +3,7 @@ package com.example.docx.style;
 import com.example.docx.DocumentGenerationException;
 import com.example.docx.Units;
 import java.math.BigInteger;
+import java.util.Locale;
 import java.util.regex.Pattern;
 import org.docx4j.jaxb.Context;
 import org.docx4j.wml.BooleanDefaultTrue;
@@ -83,10 +84,14 @@ public final class HeadingStyle {
         fonts.setHAnsi(fontFamily);
         rPr.setRFonts(fonts);
 
+        int halfPoints = Units.pointsToHalfPoints(sizePt);
         HpsMeasure size = factory.createHpsMeasure();
-        size.setVal(BigInteger.valueOf(Units.pointsToHalfPoints(sizePt)));
+        size.setVal(BigInteger.valueOf(halfPoints));
         rPr.setSz(size);
-        rPr.setSzCs(size);
+
+        HpsMeasure complexScriptSize = factory.createHpsMeasure();
+        complexScriptSize.setVal(BigInteger.valueOf(halfPoints));
+        rPr.setSzCs(complexScriptSize);
 
         if (bold) {
             BooleanDefaultTrue on = factory.createBooleanDefaultTrue();
@@ -170,7 +175,7 @@ public final class HeadingStyle {
                 throw new DocumentGenerationException(
                         "colour must be 6 hex digits, optionally prefixed with '#', got '" + hex + "'");
             }
-            return bare.toUpperCase(java.util.Locale.ROOT);
+            return bare.toUpperCase(Locale.ROOT);
         }
     }
 }

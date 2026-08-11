@@ -1,6 +1,7 @@
 package com.example.docx.style;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertNotSame;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -102,5 +103,13 @@ class HeadingStyleTest {
         assertThrows(DocumentGenerationException.class,
                 () -> HeadingStyle.builder().sizePt(1e12).build());
         assertEquals(1638.0, HeadingStyle.builder().sizePt(1638).build().sizePt());
+    }
+
+    @Test
+    void sizeAndComplexScriptSizeAreIndependentObjects() {
+        RPr rPr = HeadingStyle.builder().sizePt(20).build().toRPr();
+        assertNotSame(rPr.getSz(), rPr.getSzCs(),
+                "sz and szCs must not share one mutable HpsMeasure");
+        assertEquals(rPr.getSz().getVal(), rPr.getSzCs().getVal());
     }
 }

@@ -53,6 +53,11 @@ public final class WordDocument {
             // stream is shielded and the caller keeps ownership.
             pkg.save(new FilterOutputStream(out) {
                 @Override
+                public void write(byte[] b, int off, int len) throws IOException {
+                    out.write(b, off, len);
+                }
+
+                @Override
                 public void close() throws IOException {
                     flush();
                 }
