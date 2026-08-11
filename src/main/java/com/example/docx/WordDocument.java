@@ -1,9 +1,11 @@
 package com.example.docx;
 
 import com.example.docx.content.Paragraphs;
+import com.example.docx.content.Tables;
 import com.example.docx.page.PageSetup;
 import com.example.docx.part.ImageParts;
 import com.example.docx.style.ParagraphStyle;
+import com.example.docx.style.TableStyle;
 import com.example.docx.style.TextStyle;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
@@ -11,11 +13,13 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.List;
+import org.docx4j.jaxb.Context;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.Body;
 import org.docx4j.wml.P;
+import org.docx4j.wml.Tbl;
 
 /**
  * Fluent facade over a single Word document.
@@ -141,6 +145,23 @@ public final class WordDocument {
             return this;
         }
 
+        /** Appends a table spanning the full usable page width. */
+        public Builder table(List<String> headers, List<List<String>> rows, TableStyle style) {
+            return table(headers, rows, style, pageSetup.usableWidthTwips());
+        }
+
+        /** Appends a table of the given width, followed by a spacer paragraph. */
+        public Builder table(List<String> headers, List<List<String>> rows,
+                             TableStyle style, int widthTwips) {
+            Tbl table = Tables.of(headers, rows, style, widthTwips);
+            content.add(pkg -> table);
+            // Two adjacent tables merge into one in Word, and a body ending in a table
+            // rather than a paragraph is irregular. A spacer prevents both.
+            P spacer = Context.getWmlObjectFactory().createP();
+            content.add(pkg -> spacer);
+            return this;
+        }
+
         public WordDocument build() {
             if (content.isEmpty()) {
                 throw new DocumentGenerationException(
@@ -154,7 +175,7 @@ public final class WordDocument {
                 body.setSectPr(pageSetup.toSectPr());
 
                 for (DocumentContent item : content) {
-                    mainDocumentPart.getContent().add(item.toParagraph(pkg));
+                    mainDocumentPart.getContent().add(item.toBodyElement(pkg));
                 }
 
                 return new WordDocument(pkg);
