@@ -475,7 +475,34 @@ Add `import java.util.Locale;` to the imports, and change the fully-qualified us
 Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -B test -Dtest=HeadingStyleTest`
 Expected: PASS.
 
-- [ ] **Step 5: Fix the now-broken Quick start command**
+- [ ] **Step 5: Make the shielded stream forward bulk writes**
+
+`FilterOutputStream.write(byte[], int, int)` forwards bulk writes one byte at a time,
+so every byte docx4j deflates costs a virtual call. That matters more once documents
+carry a 50 KB PNG. In `src/main/java/com/example/docx/WordDocument.java`, add a bulk
+override to the anonymous subclass inside `writeTo`:
+
+```java
+            pkg.save(new FilterOutputStream(out) {
+                @Override
+                public void write(byte[] b, int off, int len) throws IOException {
+                    out.write(b, off, len);
+                }
+
+                @Override
+                public void close() throws IOException {
+                    flush();
+                }
+            });
+```
+
+`out` here is `FilterOutputStream`'s protected field holding the caller's stream, so
+this delegates straight through instead of looping.
+
+Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -B test -Dtest=StreamOwnershipTest,WordDocumentRoundTripTest`
+Expected: PASS — `Tests run: 9, Failures: 0, Errors: 0`.
+
+- [ ] **Step 6: Fix the now-broken Quick start command**
 
 Task 1 moved `SampleMain` to test sources, so `mvn compile exec:java` no longer
 compiles it and the documented command fails. In `README.md`, replace:
@@ -490,7 +517,7 @@ with:
 JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java
 ```
 
-- [ ] **Step 6: Correct the README's two false claims**
+- [ ] **Step 7: Correct the README's two false claims**
 
 In `README.md`, replace:
 
@@ -523,7 +550,7 @@ functions of their arguments and need no fixtures. The facade owns the
 package; `page` only produces a `w:sectPr` fragment for it.
 ```
 
-- [ ] **Step 7: Run the suite and commit**
+- [ ] **Step 8: Run the suite and commit**
 
 Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -B clean test`
 Expected: `Tests run: 45, Failures: 0, Errors: 0, Skipped: 0`.
