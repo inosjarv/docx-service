@@ -39,6 +39,12 @@ public final class Units {
         return (long) twips * EMU_PER_TWIP;
     }
 
+    /** Border widths are in eighths of a point: 1 pt is 8. */
+    public static int pointsToEighths(double points) {
+        check(points, "points");
+        return roundHalfUp(points * 8.0, "points");
+    }
+
     private static void check(double value, String unit) {
         if (!Double.isFinite(value)) {
             throw new DocumentGenerationException(unit + " must be a finite number, got " + value);

@@ -58,4 +58,13 @@ class UnitsTest {
     void twipsToEmuRejectsNegatives() {
         assertThrows(DocumentGenerationException.class, () -> Units.twipsToEmu(-1));
     }
+
+    @Test
+    void pointsToEighths() {
+        // Border width is in eighths of a point, unlike font size (half-points).
+        assertEquals(8, Units.pointsToEighths(1.0));
+        assertEquals(4, Units.pointsToEighths(0.5));
+        assertEquals(24, Units.pointsToEighths(3.0));
+        assertEquals(0, Units.pointsToEighths(0.0));
+    }
 }
