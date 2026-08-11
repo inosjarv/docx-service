@@ -50,7 +50,7 @@
 
 **Interfaces:**
 - Consumes: nothing.
-- Produces: `SampleMain` is now a test-source class; `mvn compile exec:java` runs with the test classpath.
+- Produces: `SampleMain` is now a test-source class, so the invocation becomes `mvn test-compile exec:java` and runs with the test classpath. Task 4 updates the README to match.
 
 `slf4j-simple` at `runtime` scope propagates transitively, so every consumer of this library gets it on their classpath and SLF4J may bind it instead of their own Logback or Log4j. `simplelogger.properties` in `src/main/resources` lands at the JAR root, where `SimpleLogger` reads it and applies this library's log level to their application. Both are packaging defects, not preferences.
 
@@ -475,7 +475,22 @@ Add `import java.util.Locale;` to the imports, and change the fully-qualified us
 Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -B test -Dtest=HeadingStyleTest`
 Expected: PASS.
 
-- [ ] **Step 5: Correct the README's two false claims**
+- [ ] **Step 5: Fix the now-broken Quick start command**
+
+Task 1 moved `SampleMain` to test sources, so `mvn compile exec:java` no longer
+compiles it and the documented command fails. In `README.md`, replace:
+
+```
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn compile exec:java
+```
+
+with:
+
+```
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java
+```
+
+- [ ] **Step 6: Correct the README's two false claims**
 
 In `README.md`, replace:
 
@@ -508,7 +523,7 @@ functions of their arguments and need no fixtures. The facade owns the
 package; `page` only produces a `w:sectPr` fragment for it.
 ```
 
-- [ ] **Step 6: Run the suite and commit**
+- [ ] **Step 7: Run the suite and commit**
 
 Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -B clean test`
 Expected: `Tests run: 45, Failures: 0, Errors: 0, Skipped: 0`.
