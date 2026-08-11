@@ -14,11 +14,12 @@ import org.docx4j.wml.RFonts;
 import org.docx4j.wml.RPr;
 
 /**
- * Immutable run formatting for the heading, emitted as direct formatting.
+ * Immutable run formatting (font family, size in points, bold, italic, colour),
+ * emitted as direct formatting. Used by both headings and body text.
  *
- * <p>No built-in {@code Heading1} style id is referenced, so the heading will not
- * appear in Word's Navigation pane. That is the phase-one trade-off for rendering
- * identically regardless of the document stylesheet.
+ * <p>Note: headings do not appear in Word's Navigation pane because no built-in
+ * {@code Heading1} style id is referenced. This is a phase-one trade-off for
+ * rendering identically regardless of the document stylesheet.
  */
 public final class TextStyle {
 
