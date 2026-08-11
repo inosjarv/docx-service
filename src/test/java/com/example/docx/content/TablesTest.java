@@ -132,4 +132,19 @@ class TablesTest {
         assertThrows(DocumentGenerationException.class,
                 () -> Tables.of(HEADERS, ROWS, null, 10204));
     }
+
+    @Test
+    void whitespaceOnlyCellsBecomeBlankRatherThanThrowing() {
+        // Paragraphs.of rejects blank text, so a cell of " " must take the empty path.
+        // Routing it to Paragraphs.of instead aborts the whole document.
+        List<List<String>> withWhitespace = List.of(List.of("EMEA", " ", "\t"));
+        Tbl table = Tables.of(HEADERS, withWhitespace, STYLE, 10204);
+
+        Tr row = (Tr) table.getContent().get(1);
+        for (Object cellObject : row.getContent()) {
+            Tc cell = (Tc) cellObject;
+            assertTrue(cell.getContent().stream().anyMatch(o -> o instanceof P),
+                    "every cell needs a paragraph, blank or not");
+        }
+    }
 }

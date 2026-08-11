@@ -115,11 +115,7 @@ public final class Tables {
 
     private static TblPr tableProperties(ObjectFactory factory, int widthTwips) {
         TblPr properties = factory.createTblPr();
-
-        TblWidth width = factory.createTblWidth();
-        width.setType(TWIPS);
-        width.setW(BigInteger.valueOf(widthTwips));
-        properties.setTblW(width);
+        properties.setTblW(width(factory, widthTwips));
 
         // Fixed layout makes Word honour the grid instead of auto-fitting to content.
         CTTblLayoutType layout = factory.createCTTblLayoutType();
@@ -187,9 +183,11 @@ public final class Tables {
         cell.setTcPr(properties);
 
         // A cell with no paragraph makes the document unopenable, so a blank cell still
-        // gets one. Paragraphs.of rejects blank text, so build that case directly.
+        // gets one. The guard below mirrors Paragraphs.of's blank rejection: if the text
+        // is blank (empty or whitespace-only), build the empty paragraph directly rather
+        // than routing to Paragraphs.of, which would throw DocumentGenerationException.
         String value = text == null ? "" : text;
-        cell.getContent().add(value.isEmpty()
+        cell.getContent().add(value.isBlank()
                 ? emptyParagraph(factory)
                 : Paragraphs.of(value, textStyle, CELL_PARAGRAPH));
         return cell;
