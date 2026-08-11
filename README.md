@@ -26,7 +26,7 @@ byte[] docx = WordDocument.builder()
                 .a4()
                 .marginsTwips(851)
                 .build())
-        .heading("Quarterly Report", HeadingStyle.builder()
+        .heading("Quarterly Report", TextStyle.builder()
                 .font("Calibri Light")
                 .sizePt(20)
                 .bold(true)
@@ -39,7 +39,7 @@ byte[] docx = WordDocument.builder()
 ```
 
 Both nested builders default every field, so `PageSetup.a4()` and
-`HeadingStyle.defaults()` are valid alone.
+`TextStyle.defaults()` are valid alone.
 
 For large documents prefer `writeTo(out)` over `toByteArray()`: it avoids
 buffering a second full copy of the file. `writeTo` does not close the stream
@@ -51,7 +51,7 @@ you give it, so a controller keeps ownership of the response.
 | --- | --- |
 | `com.example.docx` | `WordDocument` (facade), `Units`, `DocumentGenerationException` |
 | `…​.page` | `PageSetup` — page size and margins |
-| `…​.style` | `HeadingStyle` — run formatting |
+| `…​.style` | `TextStyle` — run formatting |
 | `…​.content` | `Headings` — stateless paragraph factory |
 | `…​.part` | `ImageParts` — image parts and the SVG blip extension |
 | `…​.sample` | Runnable `main` (test sources, so it stays out of the jar) |

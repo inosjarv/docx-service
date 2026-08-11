@@ -2,7 +2,7 @@ package com.example.docx.sample;
 
 import com.example.docx.WordDocument;
 import com.example.docx.page.PageSetup;
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,7 +22,7 @@ public final class SampleMain {
                         .a4()
                         .marginsTwips(851)
                         .build())
-                .heading("Quarterly Report", HeadingStyle.builder()
+                .heading("Quarterly Report", TextStyle.builder()
                         .font("Calibri Light")
                         .sizePt(20)
                         .bold(true)

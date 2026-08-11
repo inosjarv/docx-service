@@ -20,7 +20,7 @@ import org.docx4j.wml.RPr;
  * appear in Word's Navigation pane. That is the phase-one trade-off for rendering
  * identically regardless of the document stylesheet.
  */
-public final class HeadingStyle {
+public final class TextStyle {
 
     private static final Pattern HEX = Pattern.compile("[0-9A-Fa-f]{6}");
 
@@ -37,7 +37,7 @@ public final class HeadingStyle {
     private final boolean italic;
     private final String colorHex;
 
-    private HeadingStyle(Builder b) {
+    private TextStyle(Builder b) {
         this.fontFamily = b.fontFamily;
         this.sizePt = b.sizePt;
         this.bold = b.bold;
@@ -49,8 +49,13 @@ public final class HeadingStyle {
         return new Builder();
     }
 
-    public static HeadingStyle defaults() {
+    public static TextStyle defaults() {
         return builder().build();
+    }
+
+    /** Body text: Calibri 11 pt, regular, black. */
+    public static TextStyle body() {
+        return builder().font("Calibri").sizePt(11).bold(false).color("000000").build();
     }
 
     public String fontFamily() {
@@ -111,7 +116,7 @@ public final class HeadingStyle {
         return rPr;
     }
 
-    /** Fluent builder. Every field is defaulted; {@code HeadingStyle.defaults()} is valid alone. */
+    /** Fluent builder. Every field is defaulted; {@code TextStyle.defaults()} is valid alone. */
     public static final class Builder {
 
         private String fontFamily = DEFAULT_FONT;
@@ -149,7 +154,7 @@ public final class HeadingStyle {
             return this;
         }
 
-        public HeadingStyle build() {
+        public TextStyle build() {
             if (fontFamily == null || fontFamily.isBlank()) {
                 throw new DocumentGenerationException("font family must not be blank");
             }
@@ -163,7 +168,7 @@ public final class HeadingStyle {
             }
             this.fontFamily = fontFamily.trim();
             this.colorHex = normaliseColour(colorHex);
-            return new HeadingStyle(this);
+            return new TextStyle(this);
         }
 
         private static String normaliseColour(String hex) {

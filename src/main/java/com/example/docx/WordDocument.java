@@ -3,7 +3,7 @@ package com.example.docx;
 import com.example.docx.content.Headings;
 import com.example.docx.page.PageSetup;
 import com.example.docx.part.ImageParts;
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
@@ -73,7 +73,7 @@ public final class WordDocument {
 
         private PageSetup pageSetup = PageSetup.a4();
         private String headingText;
-        private HeadingStyle headingStyle = HeadingStyle.defaults();
+        private TextStyle headingStyle = TextStyle.defaults();
         private byte[] svgBytes;
         private byte[] pngBytes;
 
@@ -89,7 +89,7 @@ public final class WordDocument {
         }
 
         /** Sets the heading text and its style. */
-        public Builder heading(String text, HeadingStyle style) {
+        public Builder heading(String text, TextStyle style) {
             if (style == null) {
                 throw new DocumentGenerationException("heading style must not be null");
             }
@@ -98,7 +98,7 @@ public final class WordDocument {
             return this;
         }
 
-        /** Sets the heading text, keeping {@link HeadingStyle#defaults()}. */
+        /** Sets the heading text, keeping {@link TextStyle#defaults()}. */
         public Builder heading(String text) {
             this.headingText = text;
             return this;

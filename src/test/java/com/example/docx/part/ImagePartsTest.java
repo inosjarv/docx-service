@@ -7,7 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 import com.example.docx.DocumentGenerationException;
 import com.example.docx.WordDocument;
 import com.example.docx.page.PageSetup;
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -38,7 +38,7 @@ class ImagePartsTest {
     private static String documentXml(PageSetup setup) throws Exception {
         byte[] bytes = WordDocument.builder()
                 .pageSetup(setup)
-                .heading("Quarterly Report", HeadingStyle.defaults())
+                .heading("Quarterly Report", TextStyle.defaults())
                 .svgImage(svg(), png())
                 .build()
                 .toByteArray();
@@ -50,7 +50,7 @@ class ImagePartsTest {
     void bothMediaPartsExistWithCorrectContentTypes() throws Exception {
         byte[] bytes = WordDocument.builder()
                 .pageSetup(PageSetup.a4())
-                .heading("Quarterly Report", HeadingStyle.defaults())
+                .heading("Quarterly Report", TextStyle.defaults())
                 .svgImage(svg(), png())
                 .build()
                 .toByteArray();

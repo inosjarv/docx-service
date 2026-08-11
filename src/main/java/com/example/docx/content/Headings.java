@@ -1,7 +1,7 @@
 package com.example.docx.content;
 
 import com.example.docx.DocumentGenerationException;
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import org.docx4j.jaxb.Context;
 import org.docx4j.wml.ObjectFactory;
 import org.docx4j.wml.P;
@@ -20,7 +20,7 @@ public final class Headings {
     }
 
     /** A {@code w:p} holding one styled {@code w:r} with the given text. */
-    public static P heading(String text, HeadingStyle style) {
+    public static P heading(String text, TextStyle style) {
         if (text == null || text.isBlank()) {
             throw new DocumentGenerationException("heading text must not be blank");
         }

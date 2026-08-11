@@ -6,7 +6,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.page.PageSetup;
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import jakarta.xml.bind.JAXBElement;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -24,7 +24,7 @@ class WordDocumentRoundTripTest {
     private static byte[] sample() {
         return WordDocument.builder()
                 .pageSetup(PageSetup.a4())
-                .heading("Quarterly Report", HeadingStyle.defaults())
+                .heading("Quarterly Report", TextStyle.defaults())
                 .build()
                 .toByteArray();
     }
@@ -80,7 +80,7 @@ class WordDocumentRoundTripTest {
     void customStyleSurvivesTheRoundTrip() throws Exception {
         byte[] bytes = WordDocument.builder()
                 .pageSetup(PageSetup.builder().a4().marginsInches(1.0).build())
-                .heading("Custom", HeadingStyle.builder()
+                .heading("Custom", TextStyle.builder()
                         .font("Arial")
                         .sizePt(14)
                         .bold(false)
@@ -104,7 +104,7 @@ class WordDocumentRoundTripTest {
     void writeToAndToByteArrayProduceEquivalentDocuments() throws Exception {
         WordDocument doc = WordDocument.builder()
                 .pageSetup(PageSetup.a4())
-                .heading("Quarterly Report", HeadingStyle.defaults())
+                .heading("Quarterly Report", TextStyle.defaults())
                 .build();
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();

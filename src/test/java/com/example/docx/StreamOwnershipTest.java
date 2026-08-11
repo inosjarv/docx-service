@@ -3,7 +3,7 @@ package com.example.docx;
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import java.io.ByteArrayOutputStream;
 import org.junit.jupiter.api.Test;
 
@@ -22,7 +22,7 @@ class StreamOwnershipTest {
     @Test
     void writeToLeavesTheCallersStreamOpen() {
         WordDocument doc = WordDocument.builder()
-                .heading("Title", HeadingStyle.defaults())
+                .heading("Title", TextStyle.defaults())
                 .build();
 
         TrackingStream out = new TrackingStream();

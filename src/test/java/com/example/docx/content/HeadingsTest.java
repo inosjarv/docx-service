@@ -4,7 +4,7 @@ import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import com.example.docx.DocumentGenerationException;
-import com.example.docx.style.HeadingStyle;
+import com.example.docx.style.TextStyle;
 import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
 import org.docx4j.wml.P;
@@ -22,7 +22,7 @@ class HeadingsTest {
 
     @Test
     void buildsParagraphWithOneStyledRun() {
-        P p = Headings.heading("Quarterly Report", HeadingStyle.defaults());
+        P p = Headings.heading("Quarterly Report", TextStyle.defaults());
 
         assertEquals(1, p.getContent().size());
         R run = (R) p.getContent().get(0);
@@ -34,7 +34,7 @@ class HeadingsTest {
 
     @Test
     void preservesSurroundingWhitespace() {
-        P p = Headings.heading("  spaced  ", HeadingStyle.defaults());
+        P p = Headings.heading("  spaced  ", TextStyle.defaults());
         R run = (R) p.getContent().get(0);
         assertEquals("preserve", textOf(run).getSpace());
         assertEquals("  spaced  ", textOf(run).getValue());
@@ -43,9 +43,9 @@ class HeadingsTest {
     @Test
     void rejectsBlankText() {
         assertThrows(DocumentGenerationException.class,
-                () -> Headings.heading("   ", HeadingStyle.defaults()));
+                () -> Headings.heading("   ", TextStyle.defaults()));
         assertThrows(DocumentGenerationException.class,
-                () -> Headings.heading(null, HeadingStyle.defaults()));
+                () -> Headings.heading(null, TextStyle.defaults()));
     }
 
     @Test
