@@ -1,8 +1,9 @@
 package com.example.docx;
 
-import com.example.docx.content.Headings;
+import com.example.docx.content.Paragraphs;
 import com.example.docx.page.PageSetup;
 import com.example.docx.part.ImageParts;
+import com.example.docx.style.ParagraphStyle;
 import com.example.docx.style.TextStyle;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
@@ -128,7 +129,8 @@ public final class WordDocument {
                 Body body = mainDocumentPart.getJaxbElement().getBody();
                 body.setSectPr(pageSetup.toSectPr());
 
-                mainDocumentPart.getContent().add(Headings.heading(headingText, headingStyle));
+                mainDocumentPart.getContent().add(
+                        Paragraphs.of(headingText, headingStyle, ParagraphStyle.heading()));
 
                 if (svgBytes != null || pngBytes != null) {
                     mainDocumentPart.getContent().add(ImageParts.svgImage(
