@@ -65,7 +65,8 @@ One new file plus additions to `Units` and the facade.
 
 ```
 com.example.docx
-├── Units.java                     + cmToEmu, inchesToEmu (1 inch = 914400 EMU)
+├── Units.java                     + twipsToEmu (1 twip = exactly 635 EMU)
+├── page/PageSetup.java            + usableWidthTwips()
 └── part/
     └── ImageParts.java            Needs the package. Creates the PNG image part,
                                    builds the Inline, creates the SVG BinaryPart by
@@ -86,34 +87,53 @@ dependency, and it doubles as validation that the supplied bytes really are an i
 byte[] docx = WordDocument.builder()
         .pageSetup(PageSetup.a4())
         .heading("Quarterly Report", HeadingStyle.defaults())
-        .svgImage(svgBytes, pngFallbackBytes, 12.0)   // display width in cm
+        .svgImage(svgBytes, pngFallbackBytes)
         .build()
         .toByteArray();
 ```
 
-`svgImage(byte[] svg, byte[] pngFallback, double widthCm)` embeds both parts and
-appends one paragraph containing the drawing.
+`svgImage(byte[] svg, byte[] pngFallback)` embeds both parts and appends one paragraph
+containing the drawing. It takes no width: the image is drawn at **half the usable page
+width**, with height following the PNG's aspect ratio.
 
-**Sizing.** `createImageInline` sizes the image from the PNG's intrinsic pixel
-dimensions and DPI, which is not what the caller asked for. The display size is
-therefore set explicitly afterwards on the inline's extent, in EMU:
+**Sizing.** Usable width is the page width less both margins, so the image tracks
+whatever `PageSetup` was configured with rather than any fixed measurement:
 
 ```java
-long cx = Units.cmToEmu(widthCm);
+int usableTwips = pageSetup.usableWidthTwips();          // pageWidth - left - right
+long cx = Units.twipsToEmu(usableTwips / 2);
 long cy = Math.round(cx * (double) pngHeightPx / pngWidthPx);   // preserve aspect
 inline.getExtent().setCx(cx);
 inline.getExtent().setCy(cy);
 ```
 
-Verified: 12 cm emits `<wp:extent cx="4320000" cy="2592000"/>`. Height comes from the
-PNG's own pixel ratio, so the image is never distorted. 1 inch = 914,400 EMU.
+This must be set explicitly, because `createImageInline` otherwise sizes the image from
+the PNG's intrinsic pixel dimensions and DPI — which is not what was asked for. Setting
+the extent is verified to work: an earlier prototype emitted
+`<wp:extent cx="4320000" cy="2592000"/>` for an explicitly requested size.
+
+**1 twip = exactly 635 EMU** (914400 ÷ 1440 divides evenly), so twips→EMU is lossless
+integer arithmetic with no rounding to reason about.
+
+Worked example on A4 with the default 851-twip margins and the 1600×1120 demo PNG:
+
+| Quantity | Value |
+| --- | --- |
+| Page width | 11906 twips |
+| Usable width | 11906 − 851 − 851 = 10204 twips |
+| Half of usable | 5102 twips ≈ 9.0 cm |
+| `cx` | 5102 × 635 = 3,239,770 EMU |
+| `cy` | 3,239,770 × 1120/1600 = 2,267,839 EMU ≈ 6.3 cm |
+
+Odd usable widths truncate on the integer division; a half-twip is 1/2880 inch, far
+below anything renderable.
 
 The caller owns keeping the PNG visually faithful to the SVG; the library does not
 verify that they match, only that both parse.
 
 Guidance for callers, not enforced: render the PNG at roughly 2× its display width so
-the fallback stays sharp on high-DPI screens. At 96 DPI a 12 cm image is 454 px wide,
-so ~900 px is a sensible fallback. The committed demo PNG is 1600 px.
+the fallback stays sharp on high-DPI screens. Half the usable width of A4 is ~340 px at
+96 DPI, so the committed 1600 px demo PNG is comfortably oversampled.
 
 ### Three constraints that produce silently-wrong files
 
@@ -171,11 +191,18 @@ exists, without one for plain validation.
 
 ### Testing
 
-**Validation, no docx4j:** null/empty SVG rejected; undecodable PNG rejected;
-non-positive width rejected; each throwing `DocumentGenerationException`.
+**Validation, no docx4j:** null/empty SVG rejected; undecodable PNG rejected; each
+throwing `DocumentGenerationException`.
 
-**Sizing:** a 12 cm width on the 1600×1120 demo PNG yields `cx = 4320000` and
-`cy = 3024000`, preserving the 10:7 ratio.
+**`PageSetup.usableWidthTwips()`:** A4 with default margins gives 10204; a setup with
+asymmetric margins subtracts both correctly.
+
+**`Units.twipsToEmu`:** 1 twip → 635; 1440 twips → 914400.
+
+**Sizing:** on A4 with default margins and the 1600×1120 demo PNG, the emitted extent is
+`cx = 3239770`, `cy = 2267839`. A narrower `PageSetup` produces a proportionally smaller
+`cx`, which is the assertion that proves the width actually tracks the page rather than
+a constant.
 
 **Round trip, the one that matters:** build a document with an SVG, reload the bytes,
 and assert on the reloaded package — both media parts exist, the SVG part's content
