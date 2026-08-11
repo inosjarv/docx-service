@@ -92,4 +92,15 @@ class HeadingStyleTest {
         assertThrows(DocumentGenerationException.class,
                 () -> HeadingStyle.builder().font(null).build());
     }
+
+    @Test
+    void rejectsSizesBeyondWhatWordSupports() {
+        // ST_HpsMeasure is capped at 1638 pt in Word. Rejecting at build() keeps a
+        // validated HeadingStyle from throwing later at toRPr() time.
+        assertThrows(DocumentGenerationException.class,
+                () -> HeadingStyle.builder().sizePt(1639).build());
+        assertThrows(DocumentGenerationException.class,
+                () -> HeadingStyle.builder().sizePt(1e12).build());
+        assertEquals(1638.0, HeadingStyle.builder().sizePt(1638).build().sizePt());
+    }
 }

@@ -79,4 +79,14 @@ class PageSetupTest {
         assertThrows(DocumentGenerationException.class,
                 () -> PageSetup.builder().pageSizeTwips(0, 16838).build());
     }
+
+    @Test
+    void marginSumValidationSurvivesIntegerOverflow() {
+        assertThrows(DocumentGenerationException.class,
+                () -> PageSetup.builder().a4()
+                        .left(Integer.MAX_VALUE).right(Integer.MAX_VALUE).build());
+        assertThrows(DocumentGenerationException.class,
+                () -> PageSetup.builder().a4()
+                        .top(2_000_000_000).bottom(2_000_000_000).build());
+    }
 }

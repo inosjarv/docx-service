@@ -17,17 +17,17 @@ public final class Units {
 
     public static int cmToTwips(double cm) {
         check(cm, "centimetres");
-        return roundHalfUp(cm / CM_PER_INCH * TWIPS_PER_INCH);
+        return roundHalfUp(cm / CM_PER_INCH * TWIPS_PER_INCH, "centimetres");
     }
 
     public static int inchesToTwips(double inches) {
         check(inches, "inches");
-        return roundHalfUp(inches * TWIPS_PER_INCH);
+        return roundHalfUp(inches * TWIPS_PER_INCH, "inches");
     }
 
     public static int pointsToHalfPoints(double points) {
         check(points, "points");
-        return roundHalfUp(points * 2.0);
+        return roundHalfUp(points * 2.0, "points");
     }
 
     private static void check(double value, String unit) {
@@ -39,7 +39,13 @@ public final class Units {
         }
     }
 
-    private static int roundHalfUp(double value) {
-        return Math.toIntExact(Math.round(value));
+    private static int roundHalfUp(double value, String unit) {
+        long rounded = Math.round(value);
+        if (rounded > Integer.MAX_VALUE) {
+            throw new DocumentGenerationException(
+                    unit + " converts to " + rounded + ", which exceeds the maximum of "
+                            + Integer.MAX_VALUE);
+        }
+        return (int) rounded;
     }
 }

@@ -27,6 +27,9 @@ public final class HeadingStyle {
     public static final double DEFAULT_SIZE_PT = 20.0;
     public static final String DEFAULT_COLOR = "1F4E79";
 
+    /** Word's practical ceiling for {@code ST_HpsMeasure}. */
+    public static final double MAX_SIZE_PT = 1638.0;
+
     private final String fontFamily;
     private final double sizePt;
     private final boolean bold;
@@ -148,6 +151,10 @@ public final class HeadingStyle {
             if (!(sizePt > 0) || !Double.isFinite(sizePt)) {
                 throw new DocumentGenerationException(
                         "font size must be greater than zero points, got " + sizePt);
+            }
+            if (sizePt > MAX_SIZE_PT) {
+                throw new DocumentGenerationException(
+                        "font size must not exceed " + MAX_SIZE_PT + " points, got " + sizePt);
             }
             this.fontFamily = fontFamily.trim();
             this.colorHex = normaliseColour(colorHex);

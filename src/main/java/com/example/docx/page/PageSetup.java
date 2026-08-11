@@ -162,14 +162,14 @@ public final class PageSetup {
             requireNonNegative(bottomTwips, "bottom margin");
             requireNonNegative(leftTwips, "left margin");
 
-            if (leftTwips + rightTwips >= pageWidthTwips) {
+            if ((long) leftTwips + rightTwips >= pageWidthTwips) {
                 throw new DocumentGenerationException(
-                        "left + right margins (" + (leftTwips + rightTwips)
+                        "left + right margins (" + ((long) leftTwips + rightTwips)
                                 + " twips) leave no width on a " + pageWidthTwips + "-twip page");
             }
-            if (topTwips + bottomTwips >= pageHeightTwips) {
+            if ((long) topTwips + bottomTwips >= pageHeightTwips) {
                 throw new DocumentGenerationException(
-                        "top + bottom margins (" + (topTwips + bottomTwips)
+                        "top + bottom margins (" + ((long) topTwips + bottomTwips)
                                 + " twips) leave no height on a " + pageHeightTwips + "-twip page");
             }
             return new PageSetup(this);

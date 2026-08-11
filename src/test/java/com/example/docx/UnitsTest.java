@@ -37,4 +37,11 @@ class UnitsTest {
         assertThrows(DocumentGenerationException.class, () -> Units.cmToTwips(-1.0));
         assertThrows(DocumentGenerationException.class, () -> Units.pointsToHalfPoints(-1.0));
     }
+
+    @Test
+    void oversizedConversionsThrowTheModuleException() {
+        assertThrows(DocumentGenerationException.class, () -> Units.cmToTwips(1e9));
+        assertThrows(DocumentGenerationException.class, () -> Units.inchesToTwips(1e9));
+        assertThrows(DocumentGenerationException.class, () -> Units.pointsToHalfPoints(1e12));
+    }
 }
