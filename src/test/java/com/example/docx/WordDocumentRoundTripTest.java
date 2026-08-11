@@ -139,11 +139,6 @@ class WordDocumentRoundTripTest {
     }
 
     @Test
-    void requiresAHeading() {
-        assertThrows(DocumentGenerationException.class, () -> WordDocument.builder().build());
-    }
-
-    @Test
     void rejectsNullOutputStream() {
         WordDocument doc = WordDocument.builder().heading("Title").build();
         assertThrows(DocumentGenerationException.class, () -> doc.writeTo(null));

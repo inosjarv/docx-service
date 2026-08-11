@@ -9,10 +9,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.ArrayList;
+import java.util.List;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
 import org.docx4j.wml.Body;
+import org.docx4j.wml.P;
 
 /**
  * Fluent facade over a single Word document.
@@ -73,10 +76,7 @@ public final class WordDocument {
     public static final class Builder {
 
         private PageSetup pageSetup = PageSetup.a4();
-        private String headingText;
-        private TextStyle headingStyle = TextStyle.defaults();
-        private byte[] svgBytes;
-        private byte[] pngBytes;
+        private final List<DocumentContent> content = new ArrayList<>();
 
         private Builder() {
         }
@@ -89,38 +89,46 @@ public final class WordDocument {
             return this;
         }
 
-        /** Sets the heading text and its style. */
+        /** Appends a heading using {@link TextStyle#defaults()}. */
+        public Builder heading(String text) {
+            return heading(text, TextStyle.defaults());
+        }
+
+        /** Appends a heading. Each call adds one; calls do not replace each other. */
         public Builder heading(String text, TextStyle style) {
-            if (style == null) {
-                throw new DocumentGenerationException("heading style must not be null");
-            }
-            this.headingText = text;
-            this.headingStyle = style;
+            P paragraph = Paragraphs.of(text, style, ParagraphStyle.heading());
+            content.add(pkg -> paragraph);
             return this;
         }
 
-        /** Sets the heading text, keeping {@link TextStyle#defaults()}. */
-        public Builder heading(String text) {
-            this.headingText = text;
+        /** Appends a body paragraph using {@link TextStyle#body()}. */
+        public Builder paragraph(String text) {
+            return paragraph(text, TextStyle.body());
+        }
+
+        /** Appends a body paragraph. */
+        public Builder paragraph(String text, TextStyle style) {
+            P paragraph = Paragraphs.of(text, style, ParagraphStyle.body());
+            content.add(pkg -> paragraph);
             return this;
         }
 
         /**
-         * Adds an SVG image with a PNG fallback, drawn at half the usable page width.
+         * Appends an SVG image with a PNG fallback, drawn at half the usable page width.
          *
          * <p>The SVG must be SVG 1.1: Word's renderer rejects SVG 2 features such as
          * {@code height="auto"} and 8-digit hex colours that browsers accept.
          */
         public Builder svgImage(byte[] svg, byte[] pngFallback) {
-            this.svgBytes = svg;
-            this.pngBytes = pngFallback;
+            content.add(pkg -> ImageParts.svgImage(
+                    pkg, svg, pngFallback, pageSetup.usableWidthTwips() / 2));
             return this;
         }
 
         public WordDocument build() {
-            if (headingText == null || headingText.isBlank()) {
+            if (content.isEmpty()) {
                 throw new DocumentGenerationException(
-                        "a heading is required; call heading(String) before build()");
+                        "a document needs at least one heading, paragraph or image");
             }
             try {
                 WordprocessingMLPackage pkg = WordprocessingMLPackage.createPackage();
@@ -129,12 +137,8 @@ public final class WordDocument {
                 Body body = mainDocumentPart.getJaxbElement().getBody();
                 body.setSectPr(pageSetup.toSectPr());
 
-                mainDocumentPart.getContent().add(
-                        Paragraphs.of(headingText, headingStyle, ParagraphStyle.heading()));
-
-                if (svgBytes != null || pngBytes != null) {
-                    mainDocumentPart.getContent().add(ImageParts.svgImage(
-                            pkg, svgBytes, pngBytes, pageSetup.usableWidthTwips() / 2));
+                for (DocumentContent item : content) {
+                    mainDocumentPart.getContent().add(item.toParagraph(pkg));
                 }
 
                 return new WordDocument(pkg);
