@@ -951,7 +951,25 @@ unzip -p target/sample.docx word/document.xml | grep -c "w:keepNext"
 ```
 Expected: `4` — the title plus three section headings.
 
-- [ ] **Step 4: Document it**
+- [ ] **Step 4: Note that a builder is single-use for text**
+
+`heading()` and `paragraph()` build their `P` eagerly and the stored lambda returns that
+same instance every time, so two `build()` calls on one `Builder` would hand both
+documents the same JAXB nodes. The class is already documented "build one per document",
+but make that explicit for the builder too. In
+`src/main/java/com/example/docx/WordDocument.java`, extend the `Builder` class Javadoc:
+
+```java
+    /**
+     * Fluent builder. All docx4j work happens in {@link #build()}.
+     *
+     * <p>Content calls append; none replaces a previous one. Text paragraphs are built
+     * eagerly, so a builder is single-use: calling {@code build()} twice would give both
+     * documents the same paragraph objects. Build one document per builder.
+     */
+```
+
+- [ ] **Step 5: Document it**
 
 In `README.md`, replace the "Using it" example with this. Note `svgImage` is a builder
 method, so every content call happens before `build()`:
@@ -992,12 +1010,12 @@ Add to "Things that bite":
   11 px would be 8.25 pt and noticeably smaller.
 ```
 
-- [ ] **Step 5: Run the full suite**
+- [ ] **Step 6: Run the full suite**
 
 Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn -B clean test`
 Expected: `Tests run: 62, Failures: 0, Errors: 0, Skipped: 0` and `BUILD SUCCESS`.
 
-- [ ] **Step 6: Commit**
+- [ ] **Step 7: Commit**
 
 ```bash
 git add -A
