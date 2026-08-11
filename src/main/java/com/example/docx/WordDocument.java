@@ -4,6 +4,8 @@ import com.example.docx.content.Headings;
 import com.example.docx.page.PageSetup;
 import com.example.docx.style.HeadingStyle;
 import java.io.ByteArrayOutputStream;
+import java.io.FilterOutputStream;
+import java.io.IOException;
 import java.io.OutputStream;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
@@ -46,7 +48,15 @@ public final class WordDocument {
             throw new DocumentGenerationException("output stream must not be null");
         }
         try {
-            pkg.save(out);
+            // docx4j wraps the stream in a ZipOutputStream and closes it on save.
+            // Closing a caller's ServletOutputStream commits the response, so the
+            // stream is shielded and the caller keeps ownership.
+            pkg.save(new FilterOutputStream(out) {
+                @Override
+                public void close() throws IOException {
+                    flush();
+                }
+            });
         } catch (Docx4JException e) {
             throw new DocumentGenerationException("failed to serialise the document", e);
         }

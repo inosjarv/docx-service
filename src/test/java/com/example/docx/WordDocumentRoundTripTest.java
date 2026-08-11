@@ -1,6 +1,5 @@
 package com.example.docx;
 
-import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
@@ -102,7 +101,7 @@ class WordDocumentRoundTripTest {
     }
 
     @Test
-    void writeToMatchesToByteArray() throws Exception {
+    void writeToAndToByteArrayProduceEquivalentDocuments() throws Exception {
         WordDocument doc = WordDocument.builder()
                 .pageSetup(PageSetup.a4())
                 .heading("Quarterly Report", HeadingStyle.defaults())
@@ -111,7 +110,25 @@ class WordDocumentRoundTripTest {
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         doc.writeTo(out);
 
-        assertArrayEquals(doc.toByteArray(), out.toByteArray());
+        // Not a byte comparison: ZIP entries carry 2-second-granularity timestamps,
+        // so two saves can legitimately differ. Compare what the document means.
+        Body streamed = reload(out.toByteArray());
+        Body buffered = reload(doc.toByteArray());
+
+        assertEquals(streamed.getSectPr().getPgMar().getTop(),
+                buffered.getSectPr().getPgMar().getTop());
+        assertEquals(streamed.getSectPr().getPgSz().getW(),
+                buffered.getSectPr().getPgSz().getW());
+
+        R streamedRun = (R) firstParagraph(streamed).getContent().get(0);
+        R bufferedRun = (R) firstParagraph(buffered).getContent().get(0);
+        assertEquals(text(streamedRun), text(bufferedRun));
+    }
+
+    private static String text(R run) {
+        Object first = run.getContent().get(0);
+        Text t = (Text) (first instanceof JAXBElement<?> je ? je.getValue() : first);
+        return t.getValue();
     }
 
     @Test
