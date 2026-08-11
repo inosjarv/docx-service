@@ -21,25 +21,21 @@ The second writes `target/sample.docx`.
 ## Using it
 
 ```java
-byte[] docx = WordDocument.builder()
-        .pageSetup(PageSetup.builder()
-                .a4()
-                .marginsTwips(851)
-                .build())
-        .heading("Quarterly Report", TextStyle.builder()
-                .font("Calibri Light")
-                .sizePt(20)
-                .bold(true)
-                .italic(false)
-                .color("#1F4E79")
-                .build())
-        .svgImage(svgBytes, pngFallbackBytes)
-        .build()
-        .toByteArray();
-```
+var builder = WordDocument.builder()
+        .pageSetup(PageSetup.a4())
+        .heading("Quarterly Report", TextStyle.defaults());
 
-Both nested builders default every field, so `PageSetup.a4()` and
-`TextStyle.defaults()` are valid alone.
+for (Section section : sections) {          // 5, 6, 10 — decided at runtime
+    builder.heading(section.title(), TextStyle.builder().sizePt(11).bold(true).build());
+    for (String paragraph : section.paragraphs()) {
+        builder.paragraph(paragraph);
+    }
+}
+
+builder.svgImage(svgBytes, pngFallbackBytes);
+
+byte[] docx = builder.build().toByteArray();
+```
 
 For large documents prefer `writeTo(out)` over `toByteArray()`: it avoids
 buffering a second full copy of the file. `writeTo` does not close the stream
@@ -51,8 +47,8 @@ you give it, so a controller keeps ownership of the response.
 | --- | --- |
 | `com.example.docx` | `WordDocument` (facade), `Units`, `DocumentGenerationException` |
 | `…​.page` | `PageSetup` — page size and margins |
-| `…​.style` | `TextStyle` — run formatting |
-| `…​.content` | `Headings` — stateless paragraph factory |
+| `…​.style` | `TextStyle` — run formatting; `ParagraphStyle` — spacing and keep-with-next |
+| `…​.content` | `Paragraphs` — stateless paragraph factory, used for headings and body alike |
 | `…​.part` | `ImageParts` — image parts and the SVG blip extension |
 | `…​.sample` | Runnable `main` (test sources, so it stays out of the jar) |
 
@@ -85,6 +81,13 @@ package; `page` only produces a `w:sectPr` fragment for it.
   points at, and the SVG rides along as an extension. Word desktop draws the
   vector, Word Online and older Word draw the PNG. You supply both — the library
   does not rasterise, and does not check that they match.
+- **Content is appended, in order.** `heading`, `paragraph` and `svgImage` each add
+  one item; none of them replaces a previous call. Build a document by looping.
+- **Headings keep with the next paragraph.** `ParagraphStyle.heading()` sets
+  `w:keepNext`, so a heading never strands at the foot of a page with its body
+  overleaf. Body paragraphs deliberately do not set it.
+- **Points, not pixels.** An 11 pt heading is `sizePt(11)`, emitting `w:sz` 22.
+  11 px would be 8.25 pt and noticeably smaller.
 
 ## Notes
 

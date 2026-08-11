@@ -72,7 +72,13 @@ public final class WordDocument {
         }
     }
 
-    /** Fluent builder. All docx4j work happens in {@link #build()}. */
+    /**
+     * Fluent builder. All docx4j work happens in {@link #build()}.
+     *
+     * <p>Content calls append; none replaces a previous one. Text paragraphs are built
+     * eagerly, so a builder is single-use: calling {@code build()} twice would give both
+     * documents the same paragraph objects. Build one document per builder.
+     */
     public static final class Builder {
 
         private PageSetup pageSetup = PageSetup.a4();

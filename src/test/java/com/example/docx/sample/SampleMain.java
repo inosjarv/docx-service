@@ -17,11 +17,15 @@ public final class SampleMain {
     }
 
     public static void main(String[] args) throws IOException {
-        WordDocument document = WordDocument.builder()
-                .pageSetup(PageSetup.builder()
-                        .a4()
-                        .marginsTwips(851)
-                        .build())
+        TextStyle sectionHeading = TextStyle.builder()
+                .font("Calibri")
+                .sizePt(11)
+                .bold(true)
+                .color("#1F4E79")
+                .build();
+
+        var builder = WordDocument.builder()
+                .pageSetup(PageSetup.builder().a4().marginsTwips(851).build())
                 .heading("Quarterly Report", TextStyle.builder()
                         .font("Calibri Light")
                         .sizePt(20)
@@ -29,8 +33,15 @@ public final class SampleMain {
                         .italic(false)
                         .color("#1F4E79")
                         .build())
-                .svgImage(resource("/demo/chart.svg"), resource("/demo/chart.png"))
-                .build();
+                .svgImage(resource("/demo/chart.svg"), resource("/demo/chart.png"));
+
+        for (int section = 1; section <= 3; section++) {
+            builder.heading("Section " + section, sectionHeading);
+            builder.paragraph("First paragraph of section " + section + ".");
+            builder.paragraph("Second paragraph of section " + section + ".");
+        }
+
+        WordDocument document = builder.build();
 
         Path target = Path.of("target", "sample.docx");
         Files.createDirectories(target.getParent());
