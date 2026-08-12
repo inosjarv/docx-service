@@ -62,4 +62,18 @@ class ParagraphsTest {
         assertThrows(DocumentGenerationException.class,
                 () -> Paragraphs.of("Text", TextStyle.body(), null));
     }
+
+    @Test
+    void runBuildsAStandaloneStyledRun() {
+        R run = Paragraphs.run("Hello", TextStyle.body());
+        assertEquals("Hello", textOf(run).getValue());
+        assertEquals(BigInteger.valueOf(22), run.getRPr().getSz().getVal());
+    }
+
+    @Test
+    void runRejectsBlankTextAndNullStyle() {
+        assertThrows(DocumentGenerationException.class, () -> Paragraphs.run("  ", TextStyle.body()));
+        assertThrows(DocumentGenerationException.class, () -> Paragraphs.run(null, TextStyle.body()));
+        assertThrows(DocumentGenerationException.class, () -> Paragraphs.run("Hi", null));
+    }
 }
