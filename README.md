@@ -66,7 +66,7 @@ you give it, so a controller keeps ownership of the response.
 | `…​.content` | `Paragraphs` — stateless paragraph factory, used for headings and body alike |
 | `…​.style` | also `TableStyle`, `TableBorderStyle`, `BorderLine`, `Edge` |
 | `…​.part` | `ImageParts` — image parts and the SVG blip extension |
-| `…​.sample` | Runnable `main` (test sources, so it stays out of the jar) |
+| `…​.sample` | Runnable `main`s — `SampleMain`, `PostmortemSampleMain` (test sources, so they stay out of the jar) |
 
 `content` and `style` never touch `WordprocessingMLPackage`, so they are pure
 functions of their arguments and need no fixtures. The facade owns the

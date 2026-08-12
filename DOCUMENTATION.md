@@ -69,6 +69,10 @@ The second writes a timestamped `target/sample-<millis>.docx` you can open. Note
 `test-compile`, not `compile`: the sample lives in test sources so it stays out of the
 published jar.
 
+A second, bigger sample — `PostmortemSampleMain` — runs via its own named exec
+execution instead: `mvn test-compile exec:java@postmortem`, writing a timestamped
+`target/postmortem-<millis>.docx`. See the README for details.
+
 ---
 
 ## Quick start

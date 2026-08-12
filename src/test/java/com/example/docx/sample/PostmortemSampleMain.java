@@ -45,6 +45,21 @@ public final class PostmortemSampleMain {
                         .build())
                 .svgImage(resource("/demo/chart.svg"), resource("/demo/chart.png"));
 
+        TextStyle captionText = TextStyle.builder()
+                .font("Calibri")
+                .sizePt(9)
+                .italic(true)
+                .color("#595959")
+                .build();
+        ParagraphStyle captionParagraph = ParagraphStyle.builder()
+                .spaceAfterTwips(ParagraphStyle.BODY_SPACE_AFTER_TWIPS)
+                .alignment(Alignment.CENTER)
+                .build();
+        builder.paragraph(
+                "Error rate and request volume across the checkout payment endpoint, "
+                        + "07:00-10:00 UTC on 14 May.",
+                captionText, captionParagraph);
+
         TextStyle plainBody = TextStyle.builder()
                 .font("Calibri")
                 .sizePt(11)
@@ -93,10 +108,8 @@ public final class PostmortemSampleMain {
                 .build();
 
         // --- Timeline of events -------------------------------------------------
-        String timelineColour = "#1F4E79";
-        builder.heading("Timeline of Events", TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(true).color(timelineColour).build(),
-                headingNoBreak);
+        String timelineColour = "#177E89";
+        builder.heading("Timeline of Events", sectionHeadingText(timelineColour), headingNoBreak);
         builder.table(
                 List.of("Time (UTC)", "Event", "Owner"),
                 List.of(
@@ -136,22 +149,12 @@ public final class PostmortemSampleMain {
                                 "Status page updated to \"resolved\"; incident channel "
                                         + "archived.",
                                 "J. Alvarez")),
-                TableStyle.builder()
-                        .headerBorder(TableBorderStyle.builder()
-                                .color(timelineColour).widthPt(1.0)
-                                .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
-                        .bodyBorder(TableBorderStyle.builder()
-                                .color("#BFBFBF").widthPt(0.5)
-                                .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
-                        .build());
+                sectionTableStyle(timelineColour));
 
         // --- Detection and response ----------------------------------------------
         String detectionColour = "#843C0C";
-        TextStyle detectionText = TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(false).color(detectionColour).build();
-        builder.heading("Detection and Response", TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(true).color(detectionColour).build(),
-                headingNewPage);
+        TextStyle detectionText = sectionBodyText(detectionColour);
+        builder.heading("Detection and Response", sectionHeadingText(detectionColour), headingNewPage);
         builder.paragraph(
                 "The alert that caught this incident was a standard error-rate threshold "
                         + "on the checkout payment endpoint, not anything specific to the "
@@ -176,11 +179,8 @@ public final class PostmortemSampleMain {
 
         // --- Root cause analysis --------------------------------------------------
         String rootCauseColour = "#375623";
-        TextStyle rootCauseText = TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(false).color(rootCauseColour).build();
-        builder.heading("Root Cause Analysis", TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(true).color(rootCauseColour).build(),
-                headingNewPage);
+        TextStyle rootCauseText = sectionBodyText(rootCauseColour);
+        builder.heading("Root Cause Analysis", sectionHeadingText(rootCauseColour), headingNewPage);
         builder.paragraph(
                 "The proximate cause was straightforward once found; the reasons it was "
                         + "not found sooner are less so, and are the more useful part of this "
@@ -316,9 +316,7 @@ public final class PostmortemSampleMain {
 
         // --- Customer impact --------------------------------------------------
         String impactColour = "#5B2C6F";
-        builder.heading("Customer Impact", TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(true).color(impactColour).build(),
-                headingNewPage);
+        builder.heading("Customer Impact", sectionHeadingText(impactColour), headingNewPage);
         builder.table(
                 List.of("Region", "Users affected", "Compensation"),
                 List.of(
@@ -327,22 +325,12 @@ public final class PostmortemSampleMain {
                         List.of("APAC", "~310", "Automatic 10% credit issued"),
                         List.of("Enterprise accounts", "0",
                                 "Not affected — routed via dedicated gateway pool")),
-                TableStyle.builder()
-                        .headerBorder(TableBorderStyle.builder()
-                                .color(impactColour).widthPt(1.0)
-                                .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
-                        .bodyBorder(TableBorderStyle.builder()
-                                .color("#BFBFBF").widthPt(0.5)
-                                .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
-                        .build());
+                sectionTableStyle(impactColour));
 
         // --- Remediation and follow-up ---------------------------------------------
         String remediationColour = "#B7950B";
-        TextStyle remediationText = TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(false).color(remediationColour).build();
-        builder.heading("Remediation and Follow-up", TextStyle.builder()
-                .font("Calibri").sizePt(11).bold(true).color(remediationColour).build(),
-                headingNewPage);
+        TextStyle remediationText = sectionBodyText(remediationColour);
+        builder.heading("Remediation and Follow-up", sectionHeadingText(remediationColour), headingNewPage);
         builder.table(
                 List.of("Action", "Owner", "Due date", "Status"),
                 List.of(
@@ -368,14 +356,7 @@ public final class PostmortemSampleMain {
                                 "Checkout team", "2026-06-25", "Not started"),
                         List.of("Share this postmortem at the cross-team reliability review",
                                 "Incident commander", "2026-05-16", "Done")),
-                TableStyle.builder()
-                        .headerBorder(TableBorderStyle.builder()
-                                .color(remediationColour).widthPt(1.0)
-                                .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
-                        .bodyBorder(TableBorderStyle.builder()
-                                .color("#BFBFBF").widthPt(0.5)
-                                .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
-                        .build());
+                sectionTableStyle(remediationColour));
         builder.paragraph(
                 "None of the follow-up actions above are blocked on each other, and the "
                         + "two rated \"Done\" were completed within a week of the incident. "
@@ -398,6 +379,28 @@ public final class PostmortemSampleMain {
             document.writeTo(out);
         }
         System.out.println("Wrote " + target.toAbsolutePath());
+    }
+
+    /** Bold 11pt Calibri heading text in the given section colour. */
+    private static TextStyle sectionHeadingText(String colour) {
+        return TextStyle.builder().font("Calibri").sizePt(11).bold(true).color(colour).build();
+    }
+
+    /** Plain 11pt Calibri body text in the given section colour. */
+    private static TextStyle sectionBodyText(String colour) {
+        return TextStyle.builder().font("Calibri").sizePt(11).bold(false).color(colour).build();
+    }
+
+    /** A table bordered in the section colour on the header, hairline grey on the body. */
+    private static TableStyle sectionTableStyle(String colour) {
+        return TableStyle.builder()
+                .headerBorder(TableBorderStyle.builder()
+                        .color(colour).widthPt(1.0)
+                        .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
+                .bodyBorder(TableBorderStyle.builder()
+                        .color("#BFBFBF").widthPt(0.5)
+                        .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
+                .build();
     }
 
     private static byte[] resource(String name) {
