@@ -527,7 +527,7 @@ start = full.index("The 07:42 release changed the timeout")
 end = full.index("Two changes are proposed as a result")
 long_paragraph = full[start:end]
 word_count = len(long_paragraph.split())
-assert word_count >= 400, f"long paragraph only {word_count} words"
+assert word_count >= 900, f"long paragraph only {word_count} words"
 
 print("OK", path, "- long paragraph words:", word_count, "- tables:", table_count)
 PY
@@ -549,11 +549,16 @@ and confirm:
   no single stranded line at either end.
 
 This step has no command to run — it's the manual visual check the spec calls for, and
-the actual point of the whole exercise. If the paragraph does *not* straddle a page
-(e.g. it happens to start right at the top of a fresh page and just barely fits), that
-is not a bug in the code — go back to the short lead-in paragraph immediately before it
-in Step 1 and lengthen it slightly, which eats more of the current page and forces the
-long paragraph to start further down.
+the actual point of the whole exercise. The paragraph is deliberately written long
+enough (~1,000 words, ~6,500 characters) to exceed a full A4 text area's capacity
+(roughly 56 lines at 11pt Calibri, single-spaced, within the default 851-twip margins)
+on its own — "Root Cause Analysis" always opens on a fresh page
+(`pageBreakBefore(true)` on its heading), so the paragraph can start as early as the
+very top of an empty page, and the split does not rely on the lead-in paragraph before
+it leaving only a little room. If it still does not straddle a page in your Word
+version, lengthen `longRootCauseParagraph` itself further — lengthening the lead-in
+paragraph has no material effect, since the heading resets to a fresh page regardless
+of how long the lead-in is.
 
 - [ ] **Step 6: Commit**
 
