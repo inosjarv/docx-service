@@ -124,4 +124,28 @@ class TextStyleTest {
         // 11 pt is 22 half-points. Points, never pixels.
         assertEquals(BigInteger.valueOf(22), body.toRPr().getSz().getVal());
     }
+
+    @Test
+    void underlineDefaultsToFalseAndEmitsNothing() {
+        TextStyle style = TextStyle.defaults();
+        assertEquals(false, style.underline());
+        assertNull(style.toRPr().getU(), "underline must be absent, not present-and-false");
+    }
+
+    @Test
+    void underlineTrueEmitsSingle() {
+        TextStyle style = TextStyle.builder().underline(true).build();
+        assertTrue(style.underline());
+        assertEquals("single", style.toRPr().getU().getVal().value());
+    }
+
+    @Test
+    void linkIsWordsDefaultHyperlinkLook() {
+        TextStyle link = TextStyle.link();
+        assertEquals("Calibri", link.fontFamily());
+        assertEquals(11.0, link.sizePt());
+        assertEquals(false, link.bold());
+        assertTrue(link.underline());
+        assertEquals("0563C1", link.colorHex());
+    }
 }

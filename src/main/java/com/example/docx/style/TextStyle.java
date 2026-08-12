@@ -36,6 +36,7 @@ public final class TextStyle {
     private final double sizePt;
     private final boolean bold;
     private final boolean italic;
+    private final boolean underline;
     private final String colorHex;
 
     private TextStyle(Builder b) {
@@ -43,6 +44,7 @@ public final class TextStyle {
         this.sizePt = b.sizePt;
         this.bold = b.bold;
         this.italic = b.italic;
+        this.underline = b.underline;
         this.colorHex = b.colorHex;
     }
 
@@ -59,6 +61,12 @@ public final class TextStyle {
         return builder().font("Calibri").sizePt(11).bold(false).color("000000").build();
     }
 
+    /** Word's own hyperlink look: Calibri 11 pt, underlined, {@code #0563C1}. */
+    public static TextStyle link() {
+        return builder().font("Calibri").sizePt(11).bold(false)
+                .underline(true).color("0563C1").build();
+    }
+
     public String fontFamily() {
         return fontFamily;
     }
@@ -73,6 +81,10 @@ public final class TextStyle {
 
     public boolean italic() {
         return italic;
+    }
+
+    public boolean underline() {
+        return underline;
     }
 
     /** Bare uppercase {@code RRGGBB}, never prefixed with {@code #}. */
@@ -109,6 +121,11 @@ public final class TextStyle {
             on.setVal(Boolean.TRUE);
             rPr.setI(on);
         }
+        if (underline) {
+            org.docx4j.wml.U u = factory.createU();
+            u.setVal(org.docx4j.wml.UnderlineEnumeration.SINGLE);
+            rPr.setU(u);
+        }
 
         Color color = factory.createColor();
         color.setVal(colorHex);
@@ -124,6 +141,7 @@ public final class TextStyle {
         private double sizePt = DEFAULT_SIZE_PT;
         private boolean bold = true;
         private boolean italic = false;
+        private boolean underline = false;
         private String colorHex = DEFAULT_COLOR;
 
         private Builder() {
@@ -146,6 +164,11 @@ public final class TextStyle {
 
         public Builder italic(boolean italic) {
             this.italic = italic;
+            return this;
+        }
+
+        public Builder underline(boolean underline) {
+            this.underline = underline;
             return this;
         }
 
