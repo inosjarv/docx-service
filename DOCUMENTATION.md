@@ -151,7 +151,11 @@ heading fails on the line that added it, not at `build()` — which matters when
 adds thirty of them.
 
 Images validate at `build()`, because an image needs the package, which does not exist
-until then.
+until then. A linked paragraph — `paragraph(text, Hyperlink)` and its two siblings —
+follows the same rule as images and for the same reason: the link's URL is a
+relationship, which needs the package too. Everything about that call, including the
+leading text's blank-check, is deferred to `build()`, not validated at the call site
+the way a plain `paragraph(...)` call is.
 
 ---
 
