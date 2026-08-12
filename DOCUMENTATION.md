@@ -213,6 +213,7 @@ Prefer `writeTo` for large documents: it avoids buffering a second full copy.
 | `paragraph(String)` | `TextStyle.body()`, `ParagraphStyle.body()` |
 | `paragraph(String, TextStyle)` | given, `ParagraphStyle.body()` |
 | `paragraph(String, TextStyle, ParagraphStyle)` | both given |
+| `paragraph(String, Hyperlink)` | `TextStyle.body()`, `ParagraphStyle.body()` — defers to `build()`, see below |
 | `svgImage(byte[] svg, byte[] pngFallback)` | drawn at **half** the usable page width |
 | `table(headers, rows, TableStyle)` | spans the **full** usable page width |
 | `table(headers, rows, TableStyle, int widthTwips)` | explicit width |
@@ -421,6 +422,21 @@ builder.table(
 
 Rows must all have the same length as the headers. Null and blank cells are fine — they
 become empty cells, not errors.
+
+### A paragraph ending in a link
+
+```java
+builder.paragraph("Revenue grew 12%. ",
+        Hyperlink.of("Learn more", "https://example.com/report"));
+```
+
+`Hyperlink.of(text, url)` uses Word's own hyperlink look — `#0563C1`, underlined.
+`Hyperlink.of(text, url, TextStyle)` overrides it. External URLs only; there is no
+support for internal bookmarks or anchors.
+
+Unlike every other `paragraph(...)` overload, these three defer validation and
+construction to `build()` — the link's URL is a relationship, which needs the package
+that does not exist until then.
 
 ---
 

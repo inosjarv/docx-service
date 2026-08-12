@@ -1,6 +1,7 @@
 package com.example.docx.sample;
 
 import com.example.docx.WordDocument;
+import com.example.docx.content.Hyperlink;
 import com.example.docx.page.PageSetup;
 import com.example.docx.style.Alignment;
 import com.example.docx.style.BorderLine;
@@ -164,6 +165,11 @@ public final class SampleMain {
                 builder.paragraph(paragraph, bodyText, bodyParagraph);
             }
         }
+
+        // A trailing hyperlink inside the same paragraph as the body text.
+        builder.paragraph(
+                "The full dataset behind this report is available online. ",
+                Hyperlink.of("View the source data", "https://example.com/data"));
 
         WordDocument document = builder.build();
 

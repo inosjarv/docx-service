@@ -143,6 +143,9 @@ Borders are chosen per cell edge, separately for the header and the body:
   cannot give the header a border different from the body's. One consequence:
   adjacent cells each own their edges, so `LEFT` + `RIGHT` on the body puts two
   borders between columns and the thicker one wins.
+- **A linked paragraph defers to `build()`.** `paragraph(text, Hyperlink)` and its two
+  siblings need the package for the link's relationship, so — unlike every other
+  `paragraph(...)` overload — they validate at `build()` time, not at the call site.
 
 ## Notes
 
