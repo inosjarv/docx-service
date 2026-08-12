@@ -12,6 +12,17 @@ against the existing public `com.example.docx` API — no library code changes. 
 README addition documents how to run it, since the Maven `exec:java` default stays
 pointed at `SampleMain`.
 
+> **Amended during implementation:** the original plan for "how to run it" assumed
+> `-Dexec.mainClass=...` on the command line overrides an explicit `<mainClass>` set in
+> `pom.xml`'s `exec-maven-plugin` `<configuration>`. Verified false for this plugin
+> version: the POM's own configuration silently wins over the command-line property,
+> so the override did nothing (it ran `SampleMain` regardless). Confirmed fix: add a
+> second, named `<execution id="postmortem">` to the same `<plugin>` block, carrying
+> `PostmortemSampleMain` as its `mainClass`, run via `mvn exec:java@postmortem`. This
+> still touches `pom.xml` (the Global Constraints bullet below is corrected to match)
+> but the existing default execution — and every command that relies on it, including
+> `SampleMain`'s own — is untouched and still behaves exactly as before.
+
 **Tech Stack:** Java 25, docx4j (via the existing `WordDocument` facade), Maven
 `exec-maven-plugin`.
 
@@ -25,7 +36,12 @@ pointed at `SampleMain`.
 - No JUnit test is added for this class, matching the existing convention that
   `SampleMain` (and now `PostmortemSampleMain`) are manual, eyeball-the-output tools,
   not assertable behaviour — per the spec's Testing / verification section.
-- The `pom.xml` `exec-maven-plugin` default `mainClass` stays `SampleMain` — unchanged.
+- The `pom.xml` `exec-maven-plugin`'s existing default execution — bare `mvn exec:java`
+  runs `SampleMain` — is untouched. `PostmortemSampleMain` is run through a second,
+  named execution (`id="postmortem"`) added to the same `<plugin>` block, invoked as
+  `mvn exec:java@postmortem`. (See "Amended during implementation" note above —
+  `-Dexec.mainClass` does not override an explicit `<mainClass>` in this plugin's
+  configuration, so that original approach does not work.)
 - Output file: `target/postmortem-<System.currentTimeMillis()>.docx` — distinct from
   `SampleMain`'s `target/sample-*.docx` pattern.
 - The document must clear 4+ A4 pages at the default 851-twip margins, run every
@@ -40,6 +56,8 @@ pointed at `SampleMain`.
 
 **Files:**
 - Create: `docx-service/src/test/java/com/example/docx/sample/PostmortemSampleMain.java`
+- Modify: `docx-service/pom.xml` (`exec-maven-plugin` block — adds a second, named
+  execution; see Step 1a below and the "Amended during implementation" note above)
 
 **Interfaces:**
 - Consumes: `com.example.docx.WordDocument.builder()` and its fluent methods
@@ -52,8 +70,8 @@ pointed at `SampleMain`.
   `Edge` — all exactly as already used in `SampleMain.java`.
 - Produces: the fully-qualified class name
   `com.example.docx.sample.PostmortemSampleMain`, with a `public static void
-  main(String[] args)` entry point — this exact name is what Task 2's README
-  addition references.
+  main(String[] args)` entry point, runnable as `mvn exec:java@postmortem` — both
+  the class name and the execution id are what Task 2's README addition references.
 
 - [ ] **Step 1: Write the file**
 
@@ -416,6 +434,50 @@ public final class PostmortemSampleMain {
 }
 ```
 
+- [ ] **Step 1a: Add a named exec execution for it in `pom.xml`**
+
+Find this in `docx-service/pom.xml`:
+
+```xml
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <mainClass>com.example.docx.sample.SampleMain</mainClass>
+                    <classpathScope>test</classpathScope>
+                </configuration>
+            </plugin>
+```
+
+Replace it with:
+
+```xml
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>exec-maven-plugin</artifactId>
+                <version>3.6.3</version>
+                <configuration>
+                    <mainClass>com.example.docx.sample.SampleMain</mainClass>
+                    <classpathScope>test</classpathScope>
+                </configuration>
+                <executions>
+                    <execution>
+                        <id>postmortem</id>
+                        <configuration>
+                            <mainClass>com.example.docx.sample.PostmortemSampleMain</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+```
+
+The `<configuration>` directly under `<plugin>` is unchanged — it stays the default for
+the bare `exec:java` goal, so `SampleMain` keeps working exactly as before. The new
+`<execution id="postmortem">` inherits `classpathScope` from that default and only
+overrides `mainClass`; it has no `<phase>`, so it only runs when explicitly invoked by
+id (Step 3), never as part of the normal build lifecycle.
+
 - [ ] **Step 2: Compile it**
 
 Run: `JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile -q`
@@ -426,12 +488,13 @@ signatures listed in "Interfaces" above before changing anything else.
 - [ ] **Step 3: Run it**
 
 ```bash
-JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java \
-    -Dexec.mainClass=com.example.docx.sample.PostmortemSampleMain -q
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@postmortem -q
 ```
 
 Expected: one line of output, `Wrote /absolute/path/to/target/postmortem-<digits>.docx`,
-and exit code 0.
+and exit code 0. As a regression check, also run the bare `mvn test-compile exec:java
+-q` and confirm it still writes `target/sample-<digits>.docx` (i.e. still runs
+`SampleMain`, unaffected by the new execution).
 
 - [ ] **Step 4: Verify the output structurally**
 
@@ -509,7 +572,8 @@ git commit -m "Add PostmortemSampleMain: a bigger sample demonstrating a paragra
 
 **Interfaces:**
 - Consumes: the fully-qualified class name produced by Task 1,
-  `com.example.docx.sample.PostmortemSampleMain`.
+  `com.example.docx.sample.PostmortemSampleMain`, and the `postmortem` exec execution
+  id Task 1 added to `pom.xml`, run as `mvn exec:java@postmortem`.
 
 - [ ] **Step 1: Add the run command to the README**
 
@@ -524,11 +588,10 @@ Replace that one line with:
 
     A second, bigger sample — an incident postmortem long enough to run several pages,
     with a paragraph deliberately written to split across a page boundary — is
-    `PostmortemSampleMain`. Run it by overriding the exec plugin's default main class:
+    `PostmortemSampleMain`. Run it via its own named exec execution:
 
     ```bash
-    JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java \
-        -Dexec.mainClass=com.example.docx.sample.PostmortemSampleMain
+    JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@postmortem
     ```
 
     This writes `target/postmortem-<timestamp>.docx`.
