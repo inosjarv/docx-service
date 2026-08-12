@@ -72,8 +72,17 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.6.3</version>
                 <configuration>
+                    <mainClass>com.example.docx.sample.SampleMain</mainClass>
                     <classpathScope>test</classpathScope>
                 </configuration>
+                <executions>
+                    <execution>
+                        <id>postmortem</id>
+                        <configuration>
+                            <mainClass>com.example.docx.sample.PostmortemSampleMain</mainClass>
+                        </configuration>
+                    </execution>
+                </executions>
             </plugin>
         </plugins>
     </build>
