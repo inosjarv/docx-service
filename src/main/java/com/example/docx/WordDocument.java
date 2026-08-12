@@ -1,8 +1,10 @@
 package com.example.docx;
 
+import com.example.docx.content.Hyperlink;
 import com.example.docx.content.Paragraphs;
 import com.example.docx.content.Tables;
 import com.example.docx.page.PageSetup;
+import com.example.docx.part.Hyperlinks;
 import com.example.docx.part.ImageParts;
 import com.example.docx.style.ParagraphStyle;
 import com.example.docx.style.TableStyle;
@@ -130,6 +132,31 @@ public final class WordDocument {
         public Builder paragraph(String text, TextStyle style, ParagraphStyle paragraphStyle) {
             P paragraph = Paragraphs.of(text, style, paragraphStyle);
             content.add(pkg -> paragraph);
+            return this;
+        }
+
+        /** Appends a body paragraph ending in a hyperlink, using {@link TextStyle#body()}. */
+        public Builder paragraph(String text, Hyperlink link) {
+            return paragraph(text, TextStyle.body(), link);
+        }
+
+        /** Appends a body paragraph ending in a hyperlink. */
+        public Builder paragraph(String text, TextStyle style, Hyperlink link) {
+            return paragraph(text, style, ParagraphStyle.body(), link);
+        }
+
+        /**
+         * Appends a paragraph ending in a hyperlink, with explicit paragraph-level
+         * formatting.
+         *
+         * <p>Unlike the no-link overloads, this defers to {@code build()}: a hyperlink's
+         * target is a relationship, which needs the package that does not exist until
+         * then. {@code text}'s blank-check is therefore deferred too, along with
+         * everything else this constructs.
+         */
+        public Builder paragraph(String text, TextStyle style, ParagraphStyle paragraphStyle,
+                                 Hyperlink link) {
+            content.add(pkg -> Hyperlinks.paragraph(pkg, text, style, paragraphStyle, link));
             return this;
         }
 
