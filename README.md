@@ -21,7 +21,17 @@ JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test
 JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java
 ```
 
-The second writes `target/sample.docx`.
+The second writes `target/sample-<timestamp>.docx`.
+
+A second, bigger sample — an incident postmortem long enough to run several pages,
+with a paragraph deliberately written to split across a page boundary — is
+`PostmortemSampleMain`. Run it via its own named exec execution:
+
+```bash
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@postmortem
+```
+
+This writes `target/postmortem-<timestamp>.docx`.
 
 ## Using it
 
