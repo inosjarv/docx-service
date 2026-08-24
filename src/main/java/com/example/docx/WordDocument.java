@@ -13,9 +13,13 @@ import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
+import org.docx4j.Docx4J;
+import org.docx4j.convert.out.HTMLSettings;
 import org.docx4j.jaxb.Context;
+import org.docx4j.model.images.DataUriConversionImageHandler;
 import org.docx4j.openpackaging.exceptions.Docx4JException;
 import org.docx4j.openpackaging.packages.WordprocessingMLPackage;
 import org.docx4j.openpackaging.parts.WordprocessingML.MainDocumentPart;
@@ -75,6 +79,64 @@ public final class WordDocument {
             });
         } catch (Docx4JException e) {
             throw new DocumentGenerationException("failed to serialise the document", e);
+        }
+    }
+
+    /** Renders the document as a self-contained XHTML string. */
+    public String toHtml() {
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        writeHtmlTo(out);
+        return out.toString(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Three rules docx4j's own conversion does not provide for on-screen viewing:
+     *
+     * <ul>
+     *   <li>Its only margin is inside a print-media {@code @page} block, which browsers
+     *       ignore.</li>
+     *   <li>Every {@code <table>} carries a hard-coded absolute inch width with no
+     *       responsive fallback.</li>
+     *   <li>The library's default {@code Alignment.LEFT} emits no {@code w:jc} at all
+     *       (Word's own default needs no explicit marker), so docx4j never writes a
+     *       {@code text-align} on a plain cell either — but browsers' built-in
+     *       stylesheets still center {@code <th>} text while leaving {@code <td>}
+     *       left-aligned, splitting headers from their body even though the document
+     *       defines no such difference.</li>
+     * </ul>
+     *
+     * <p>Injected via docx4j's {@code userBodyTop} extension point, right after
+     * {@code <body>} opens — not a replacement for docx4j's own generated styling, which
+     * still supplies every other rule (fonts, colours, table borders, spacing).
+     */
+    private static final String SCREEN_LAYOUT_CSS = "<style>"
+            + "body{margin:2em auto;max-width:8.5in;padding:0 1em}"
+            + "table{max-width:100% !important}"
+            + "th{text-align:inherit}"
+            + "</style>";
+
+    /**
+     * Renders the document as XHTML to {@code out}.
+     *
+     * <p>Styling comes almost entirely from docx4j's own XSLT conversion — an inline
+     * {@code <style>} block it derives from the document's paragraph and run
+     * formatting — plus {@link #SCREEN_LAYOUT_CSS}, a few rules for on-screen viewing
+     * that docx4j's print-oriented output doesn't otherwise supply. Images are embedded
+     * as base64 {@code data:} URIs, so the result is a single self-contained document
+     * with no files alongside it.
+     */
+    public void writeHtmlTo(OutputStream out) {
+        if (out == null) {
+            throw new DocumentGenerationException("output stream must not be null");
+        }
+        try {
+            HTMLSettings settings = Docx4J.createHTMLSettings();
+            settings.setOpcPackage(pkg);
+            settings.setImageHandler(new DataUriConversionImageHandler());
+            settings.setUserBodyTop(SCREEN_LAYOUT_CSS);
+            Docx4J.toHTML(settings, out, Docx4J.FLAG_NONE);
+        } catch (Docx4JException e) {
+            throw new DocumentGenerationException("failed to convert the document to HTML", e);
         }
     }
 

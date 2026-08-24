@@ -85,6 +85,24 @@
                             <mainClass>com.example.docx.sample.PostmortemSampleMain</mainClass>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>html-sample</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.example.docx.sample.HtmlSampleMain</mainClass>
+                        </configuration>
+                    </execution>
+                    <execution>
+                        <id>postmortem-html</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.example.docx.sample.PostmortemHtmlSampleMain</mainClass>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>

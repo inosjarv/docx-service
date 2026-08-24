@@ -33,6 +33,24 @@ JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@postmortem
 
 This writes `target/postmortem-<timestamp>.docx`.
 
+A third sample renders the same document as `SampleMain` — heading, chart, table,
+sections and hyperlink — to HTML instead, via `WordDocument#toHtml`/`writeHtmlTo`:
+
+```bash
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@html-sample
+```
+
+This writes `target/sample-<timestamp>.html`, self-contained (styles and images
+inline) — open it directly in a browser.
+
+The postmortem sample has an HTML counterpart too:
+
+```bash
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@postmortem-html
+```
+
+This writes `target/postmortem-<timestamp>.html`.
+
 ## Using it
 
 ```java
