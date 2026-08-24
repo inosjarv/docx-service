@@ -207,8 +207,16 @@ is invisible, but they are different numbers — do not treat them as interchang
 | `WordDocument.builder()` | `Builder` | |
 | `toByteArray()` | `byte[]` | Buffers the whole file |
 | `writeTo(OutputStream)` | `void` | Does **not** close the stream |
+| `toHtml()` | `String` | Self-contained XHTML; buffers the whole thing |
+| `writeHtmlTo(OutputStream)` | `void` | Does **not** close the stream |
 
-Prefer `writeTo` for large documents: it avoids buffering a second full copy.
+Prefer `writeTo`/`writeHtmlTo` for large documents: they avoid buffering a second full
+copy.
+
+`toHtml()`/`writeHtmlTo` render via docx4j's own XHTML converter — the `<style>` block
+comes entirely from docx4j's conversion of the document's paragraph and run formatting,
+not from anything authored in this library. Images embed as base64 `data:` URIs, so the
+output is one self-contained document with nothing alongside it to ship separately.
 
 ### `WordDocument.Builder`
 

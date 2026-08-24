@@ -101,6 +101,22 @@ public final class SampleMain {
     }
 
     public static void main(String[] args) throws IOException {
+        WordDocument document = build();
+
+        Path target = Path.of("target", "sample-%d.docx".formatted(System.currentTimeMillis()));
+        Files.createDirectories(target.getParent());
+        try (OutputStream out = Files.newOutputStream(target)) {
+            document.writeTo(out);
+        }
+        System.out.println("Wrote " + target.toAbsolutePath());
+    }
+
+    /**
+     * Builds the same document {@link #main} writes to disk, so other samples (such as
+     * {@code HtmlSampleMain}) can render it in a different format without duplicating
+     * the content.
+     */
+    static WordDocument build() {
         var builder = WordDocument.builder()
                 .pageSetup(PageSetup.builder().a4().marginsTwips(851).build())
                 .heading("Quarterly Report", TextStyle.builder()
@@ -171,14 +187,7 @@ public final class SampleMain {
                 "The full dataset behind this report is available online. ",
                 Hyperlink.of("View the source data", "https://example.com/data"));
 
-        WordDocument document = builder.build();
-
-        Path target = Path.of("target", "sample-%d.docx".formatted(System.currentTimeMillis()));
-        Files.createDirectories(target.getParent());
-        try (OutputStream out = Files.newOutputStream(target)) {
-            document.writeTo(out);
-        }
-        System.out.println("Wrote " + target.toAbsolutePath());
+        return builder.build();
     }
 
     private static byte[] resource(String name) {

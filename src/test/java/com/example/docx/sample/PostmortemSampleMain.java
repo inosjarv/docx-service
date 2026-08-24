@@ -34,6 +34,22 @@ public final class PostmortemSampleMain {
     }
 
     public static void main(String[] args) throws IOException {
+        WordDocument document = build();
+
+        Path target = Path.of("target", "postmortem-%d.docx".formatted(System.currentTimeMillis()));
+        Files.createDirectories(target.getParent());
+        try (OutputStream out = Files.newOutputStream(target)) {
+            document.writeTo(out);
+        }
+        System.out.println("Wrote " + target.toAbsolutePath());
+    }
+
+    /**
+     * Builds the same document {@link #main} writes to disk, so other samples (such as
+     * {@code PostmortemHtmlSampleMain}) can render it in a different format without
+     * duplicating the content.
+     */
+    static WordDocument build() {
         var builder = WordDocument.builder()
                 .pageSetup(PageSetup.builder().a4().marginsTwips(851).build())
                 .heading("Incident Postmortem: Checkout Service Outage", TextStyle.builder()
@@ -371,14 +387,7 @@ public final class PostmortemSampleMain {
                 Hyperlink.of("View the runbook",
                         "https://example.com/runbooks/checkout-outage-2026-05-14"));
 
-        WordDocument document = builder.build();
-
-        Path target = Path.of("target", "postmortem-%d.docx".formatted(System.currentTimeMillis()));
-        Files.createDirectories(target.getParent());
-        try (OutputStream out = Files.newOutputStream(target)) {
-            document.writeTo(out);
-        }
-        System.out.println("Wrote " + target.toAbsolutePath());
+        return builder.build();
     }
 
     /** Bold 11pt Calibri heading text in the given section colour. */
