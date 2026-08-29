@@ -84,6 +84,22 @@ class WordDocumentHtmlTest {
     }
 
     @Test
+    void toHtmlEmbedsTheDocumentFontSoItRendersTheSameEverywhere() throws Exception {
+        WordDocument doc = WordDocument.builder().heading("Report").build();
+
+        String html = assertWellFormedXml(doc.toHtml());
+
+        // docx4j cannot resolve Calibri/Calibri Light to a physical font outside
+        // Windows and silently emits no font-family at all — so the look must come
+        // from a font we embed ourselves rather than one docx4j maps.
+        assertTrue(html.contains("@font-face"), "expected an embedded @font-face rule in " + html);
+        assertTrue(html.contains("data:font/woff2;base64,"),
+                "expected the font to be embedded as a data: URI, not linked, in " + html);
+        assertTrue(html.matches("(?s).*body\\s*\\{[^}]*font-family[^}]*\\}.*"),
+                "expected a body rule selecting the embedded font in " + html);
+    }
+
+    @Test
     void toHtmlGivesTheBodyOnScreenMargin() throws Exception {
         WordDocument doc = WordDocument.builder().heading("Report").build();
 

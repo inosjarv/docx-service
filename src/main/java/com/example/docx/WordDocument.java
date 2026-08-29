@@ -12,9 +12,12 @@ import com.example.docx.style.TextStyle;
 import java.io.ByteArrayOutputStream;
 import java.io.FilterOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.UncheckedIOException;
 import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
 import java.util.List;
 import org.docx4j.Docx4J;
 import org.docx4j.convert.out.HTMLSettings;
@@ -107,7 +110,9 @@ public final class WordDocument {
      *
      * <p>Injected via docx4j's {@code userBodyTop} extension point, right after
      * {@code <body>} opens — not a replacement for docx4j's own generated styling, which
-     * still supplies every other rule (fonts, colours, table borders, spacing).
+     * still supplies every other rule (fonts, colours, table borders, spacing) — except
+     * for one gap {@link #FONT_FACE_CSS} closes: outside Windows, docx4j cannot resolve
+     * the document's own font (see there), and emits no {@code font-family} at all.
      */
     private static final String SCREEN_LAYOUT_CSS = "<style>"
             + "body{margin:2em auto;max-width:8.5in;padding:0 1em}"
@@ -116,14 +121,57 @@ public final class WordDocument {
             + "</style>";
 
     /**
+     * {@code @font-face} rules embedding Carlito, plus a {@code body} rule selecting it.
+     *
+     * <p>Every document built by {@link Builder} defaults to Calibri / Calibri Light
+     * (see {@link com.example.docx.style.TextStyle}), a Microsoft font this module has
+     * no licence to redistribute and that docx4j itself cannot resolve to a physical
+     * font on non-Windows hosts — it logs {@code GlyphCheck}/{@code IdentityPlusMapper}
+     * warnings and silently emits no {@code font-family} for it at all, leaving the
+     * browser to fall back to its own default font.
+     *
+     * <p>Carlito is Google's metric-compatible, openly-licensed substitute (SIL OFL —
+     * see {@code fonts/OFL.txt}): same character widths and line breaks as Calibri, a
+     * near-identical look. The two weights below are subset to Latin text plus common
+     * punctuation (curly quotes, em/en dash, ellipsis) and woff2-compressed, keeping
+     * each generated HTML file self-contained — no network request, no dependence on
+     * fonts installed on the machine that opens it — for roughly 40KB extra per
+     * document. There is no bundled italic face; browsers synthesize a reasonable
+     * oblique from the regular weight instead.
+     */
+    private static final String FONT_FACE_CSS = "<style>"
+            + fontFace("Carlito", 400, "fonts/Carlito-Regular.woff2")
+            + fontFace("Carlito", 700, "fonts/Carlito-Bold.woff2")
+            + "body{font-family:'Carlito',Arial,sans-serif}"
+            + "</style>";
+
+    private static String fontFace(String family, int weight, String resourcePath) {
+        return "@font-face{font-family:'%s';font-weight:%d;font-style:normal;src:url(data:font/woff2;base64,%s) format('woff2')}"
+                .formatted(family, weight, base64Resource(resourcePath));
+    }
+
+    private static String base64Resource(String resourcePath) {
+        try (InputStream in = WordDocument.class.getClassLoader().getResourceAsStream(resourcePath)) {
+            if (in == null) {
+                throw new IllegalStateException("missing bundled resource " + resourcePath);
+            }
+            return Base64.getEncoder().encodeToString(in.readAllBytes());
+        } catch (IOException e) {
+            throw new UncheckedIOException("failed to load bundled resource " + resourcePath, e);
+        }
+    }
+
+    /**
      * Renders the document as XHTML to {@code out}.
      *
      * <p>Styling comes almost entirely from docx4j's own XSLT conversion — an inline
      * {@code <style>} block it derives from the document's paragraph and run
      * formatting — plus {@link #SCREEN_LAYOUT_CSS}, a few rules for on-screen viewing
-     * that docx4j's print-oriented output doesn't otherwise supply. Images are embedded
-     * as base64 {@code data:} URIs, so the result is a single self-contained document
-     * with no files alongside it.
+     * that docx4j's print-oriented output doesn't otherwise supply, and
+     * {@link #FONT_FACE_CSS}, which embeds the document's font directly. Images are
+     * likewise embedded as base64 {@code data:} URIs, so the result is a single
+     * self-contained document with no files alongside it and nothing fetched at
+     * render time.
      */
     public void writeHtmlTo(OutputStream out) {
         if (out == null) {
@@ -133,7 +181,7 @@ public final class WordDocument {
             HTMLSettings settings = Docx4J.createHTMLSettings();
             settings.setOpcPackage(pkg);
             settings.setImageHandler(new DataUriConversionImageHandler());
-            settings.setUserBodyTop(SCREEN_LAYOUT_CSS);
+            settings.setUserBodyTop(FONT_FACE_CSS + SCREEN_LAYOUT_CSS);
             Docx4J.toHTML(settings, out, Docx4J.FLAG_NONE);
         } catch (Docx4JException e) {
             throw new DocumentGenerationException("failed to convert the document to HTML", e);
