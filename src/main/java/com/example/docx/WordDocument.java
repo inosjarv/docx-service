@@ -2,6 +2,7 @@ package com.example.docx;
 
 import com.example.docx.content.Hyperlink;
 import com.example.docx.content.Paragraphs;
+import com.example.docx.content.RichText;
 import com.example.docx.content.Tables;
 import com.example.docx.page.PageSetup;
 import com.example.docx.part.Hyperlinks;
@@ -241,6 +242,18 @@ public final class WordDocument {
         /** Appends a body paragraph with explicit paragraph-level formatting. */
         public Builder paragraph(String text, TextStyle style, ParagraphStyle paragraphStyle) {
             P paragraph = Paragraphs.of(text, style, paragraphStyle);
+            content.add(pkg -> paragraph);
+            return this;
+        }
+
+        /** Appends a body paragraph built from {@link RichText}, using {@link ParagraphStyle#body()}. */
+        public Builder paragraph(RichText richText) {
+            return paragraph(richText, ParagraphStyle.body());
+        }
+
+        /** Appends a body paragraph built from {@link RichText} with explicit paragraph-level formatting. */
+        public Builder paragraph(RichText richText, ParagraphStyle paragraphStyle) {
+            P paragraph = Paragraphs.of(richText, paragraphStyle);
             content.add(pkg -> paragraph);
             return this;
         }
