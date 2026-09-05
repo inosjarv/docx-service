@@ -66,4 +66,20 @@ public final class Paragraphs {
         paragraph.getContent().add(run);
         return paragraph;
     }
+
+    /** A {@code w:p} whose runs come from a {@link RichText}'s parsed spans. */
+    public static P of(RichText richText, ParagraphStyle paragraphStyle) {
+        if (richText == null) {
+            throw new DocumentGenerationException("rich text must not be null");
+        }
+        if (paragraphStyle == null) {
+            throw new DocumentGenerationException("paragraph style must not be null");
+        }
+
+        ObjectFactory factory = Context.getWmlObjectFactory();
+        P paragraph = factory.createP();
+        paragraph.setPPr(paragraphStyle.toPPr());
+        paragraph.getContent().addAll(richText.toRuns());
+        return paragraph;
+    }
 }

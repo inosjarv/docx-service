@@ -3,6 +3,7 @@ package com.example.docx.content;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.DocumentGenerationException;
 import com.example.docx.style.ParagraphStyle;
@@ -75,5 +76,30 @@ class ParagraphsTest {
         assertThrows(DocumentGenerationException.class, () -> Paragraphs.run("  ", TextStyle.body()));
         assertThrows(DocumentGenerationException.class, () -> Paragraphs.run(null, TextStyle.body()));
         assertThrows(DocumentGenerationException.class, () -> Paragraphs.run("Hi", null));
+    }
+
+    @Test
+    void buildsOneParagraphWithOneRunPerRichTextSpan() {
+        P p = Paragraphs.of(
+                RichText.of("Some text which needs to be <b>bold</b>."), ParagraphStyle.body());
+
+        assertEquals(3, p.getContent().size());
+        R bold = (R) p.getContent().get(1);
+        assertEquals("bold", textOf(bold).getValue());
+        assertTrue(bold.getRPr().getB().isVal());
+    }
+
+    @Test
+    void richTextParagraphUsesTheGivenParagraphStyle() {
+        P p = Paragraphs.of(RichText.of("Overview"), ParagraphStyle.heading());
+        assertNotNull(p.getPPr().getKeepNext(), "heading paragraph style must set keepNext");
+    }
+
+    @Test
+    void ofRichTextRejectsNulls() {
+        assertThrows(DocumentGenerationException.class,
+                () -> Paragraphs.of((RichText) null, ParagraphStyle.body()));
+        assertThrows(DocumentGenerationException.class,
+                () -> Paragraphs.of(RichText.of("Text"), null));
     }
 }
