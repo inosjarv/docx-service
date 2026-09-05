@@ -26,9 +26,12 @@ import org.xml.sax.SAXException;
  *
  * <p>Markup is parsed as XML, so the plain-text portions must escape the characters XML
  * gives special meaning: write {@code &amp;}, {@code &lt;}, {@code &gt;} rather than bare
- * {@code &}, {@code <}, {@code >} — the same rule HTML itself imposes. An unrecognised
- * tag, an unclosed tag, or any other well-formedness problem throws
- * {@link DocumentGenerationException} rather than guessing at intent.
+ * {@code &}, {@code <}, {@code >}. Only the five XML built-in entities ({@code &amp;},
+ * {@code &lt;}, {@code &gt;}, {@code &quot;}, {@code &apos;}) and numeric character
+ * references (e.g. {@code &#160;}) are available — HTML named entities such as
+ * {@code &nbsp;} are rejected, not silently accepted. An unrecognised tag, an unclosed
+ * tag, or any other well-formedness problem throws {@link DocumentGenerationException}
+ * rather than guessing at intent.
  *
  * <p>Parses eagerly at {@link #of}: the result is a fixed, already-validated sequence of
  * (text, style) spans, one {@code w:r} per span once {@link #toRuns()} runs.
@@ -61,7 +64,7 @@ public final class RichText {
 
         if (spans.isEmpty() || spans.stream().anyMatch(s -> s.text().isBlank())) {
             throw new DocumentGenerationException(
-                    "rich text must contain visible, non-whitespace text: '" + markup + "'");
+                    "rich text must contain visible, non-whitespace text: '" + truncate(markup) + "'");
         }
         return new RichText(spans);
     }
@@ -95,8 +98,15 @@ public final class RichText {
             throw new IllegalStateException("XML parser misconfigured", e);
         } catch (SAXException | IOException e) {
             throw new DocumentGenerationException(
-                    "rich text is not well-formed markup: '" + markup + "'", e);
+                    "rich text is not well-formed markup: '" + truncate(markup) + "' (" + e.getMessage() + ")",
+                    e);
         }
+    }
+
+    /** Caps how much of a raw markup string is echoed into an exception message. */
+    private static String truncate(String s) {
+        int limit = 120;
+        return s.length() <= limit ? s : s.substring(0, limit) + "...";
     }
 
     private static void collectSpans(Node node, TextStyle style, List<Span> spans) {

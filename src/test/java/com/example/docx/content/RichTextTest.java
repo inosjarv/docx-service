@@ -118,4 +118,10 @@ class RichTextTest {
     void rejectsAnUnescapedAmpersand() {
         assertThrows(DocumentGenerationException.class, () -> RichText.of("Fish & Chips"));
     }
+
+    @Test
+    void rejectsADoctypeDeclarationUsedForXxe() {
+        assertThrows(DocumentGenerationException.class,
+                () -> RichText.of("<!DOCTYPE foo [<!ENTITY xxe \"pwned\">]><b>&xxe;</b>"));
+    }
 }
