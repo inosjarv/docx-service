@@ -88,6 +88,7 @@ public final class RichText {
             factory.setXIncludeAware(false);
             factory.setExpandEntityReferences(false);
             DocumentBuilder builder = factory.newDocumentBuilder();
+            builder.setErrorHandler(new org.xml.sax.helpers.DefaultHandler());
             String wrapped = "<root>" + markup + "</root>";
             return builder.parse(new ByteArrayInputStream(wrapped.getBytes(StandardCharsets.UTF_8)));
         } catch (ParserConfigurationException e) {
