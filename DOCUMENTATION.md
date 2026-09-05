@@ -230,6 +230,8 @@ output is one self-contained document with nothing alongside it to ship separate
 | `paragraph(String, TextStyle)` | given, `ParagraphStyle.body()` |
 | `paragraph(String, TextStyle, ParagraphStyle)` | both given |
 | `paragraph(String, Hyperlink)` | `TextStyle.body()`, `ParagraphStyle.body()` — defers to `build()`, see below |
+| `paragraph(RichText)` | `ParagraphStyle.body()` |
+| `paragraph(RichText, ParagraphStyle)` | given |
 | `svgImage(byte[] svg, byte[] pngFallback)` | drawn at **half** the usable page width |
 | `table(headers, rows, TableStyle)` | spans the **full** usable page width |
 | `table(headers, rows, TableStyle, int widthTwips)` | explicit width |
@@ -284,6 +286,19 @@ Accessors: `fontFamily()`, `sizePt()`, `bold()`, `italic()`, `colorHex()`, `toRP
 `colorHex()` returns bare uppercase `RRGGBB` — OOXML rejects a leading `#`, so the
 builder strips it. Sizes above `MAX_SIZE_PT` (1638) are rejected; that is Word's own
 ceiling.
+
+### `RichText`
+
+Plain text carrying a limited set of inline markup on top of one base `TextStyle`.
+
+```java
+RichText.of(markup)             // styled against TextStyle.body()
+RichText.of(markup, baseStyle)  // styled against an explicit base style
+```
+
+Recognised tags: `<b>`/`<strong>` (bold), `<i>`/`<em>` (italic), `<u>` (underline).
+Tags nest freely and are matched case-insensitively. Any unrecognised tag, or any
+markup that is not well-formed, throws `DocumentGenerationException`.
 
 ### `ParagraphStyle`
 
@@ -454,6 +469,15 @@ Unlike every other `paragraph(...)` overload, these three defer validation and
 construction to `build()` — the link's URL is a relationship, which needs the package
 that does not exist until then.
 
+### Mixed formatting within a paragraph
+
+```java
+builder.paragraph(RichText.of("Some text which needs to be <b>bold</b>."));
+```
+
+`paragraph(RichText, ParagraphStyle)` is also available when the paragraph itself needs
+explicit spacing, alignment, or page-flow behaviour.
+
 ---
 
 ## Things that will bite you
@@ -488,6 +512,12 @@ the builder default is `false`.
 
 **A `\n` inside paragraph text does nothing.** It lands raw in `w:t` and Word collapses it
 to a single line. There is no line-break support yet; use separate `paragraph` calls.
+
+**`RichText` markup is parsed as XML, not HTML.** Plain-text portions must escape `&`,
+`<`, `>` as `&amp;`, `&lt;`, `&gt;`. Only the five XML built-in entities (`&amp;`,
+`&lt;`, `&gt;`, `&quot;`, `&apos;`) and numeric character references (e.g. `&#160;`) are
+available — HTML named entities like `&nbsp;` are **not** supported and will be
+rejected.
 
 **Two adjacent tables would merge into one** in Word. The library emits a spacer paragraph
 after every table to prevent it, which is why a document of paragraph-table-paragraph has
@@ -577,7 +607,7 @@ package — sit in the same ordered list as text.
 
 Not built, and not planned without a reason:
 
-- Line breaks within a paragraph, and mixed formatting within one paragraph (multiple runs)
+- Line breaks within a paragraph
 - Lists and numbering
 - Headers, footers, page numbers, and tables of contents
 - Merged table cells, cell shading, per-cell style overrides, explicit per-column widths,
