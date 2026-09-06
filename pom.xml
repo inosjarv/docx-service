@@ -115,6 +115,15 @@
                             <mainClass>com.example.docx.sample.PostmortemHtmlSampleMain</mainClass>
                         </configuration>
                     </execution>
+                    <execution>
+                        <id>gallery</id>
+                        <goals>
+                            <goal>java</goal>
+                        </goals>
+                        <configuration>
+                            <mainClass>com.example.docx.sample.gallery.GalleryMain</mainClass>
+                        </configuration>
+                    </execution>
                 </executions>
             </plugin>
         </plugins>
