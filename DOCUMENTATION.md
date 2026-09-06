@@ -636,3 +636,29 @@ unzip -p report.docx word/document.xml | grep -o '<wp:extent[^/]*/>'   # image s
 unzip -p report.docx word/document.xml | grep -c 'w:keepNext'          # headings kept with next
 unzip -p report.docx word/document.xml | grep -o '<w:gridCol[^/]*/>'   # table columns
 ```
+
+---
+
+## Document gallery
+
+A dev tool for seeing every sample document's real Word-rendered look and feel in one
+browser tab, without hand-running each `*SampleMain` and opening its output one file at a
+time:
+
+```bash
+mvn exec:java@gallery
+```
+
+Requires a local LibreOffice install — real rendering fidelity needs a real OOXML layout
+engine, which is exactly what this shells out to via a headless LibreOffice process.
+`brew install --cask libreoffice` on macOS installs it somewhere the tool auto-detects; if
+it isn't found, the command prints an actionable message and exits rather than a stack
+trace.
+
+Writes `target/gallery/index.html`, one section per fixture (currently `sample`,
+`postmortem`, `rich-text`) with every page rendered as a PNG. Add a fixture by adding one
+line to `GalleryFixtures.all()` — no other file needs to change.
+
+This is a review-convenience tool only: it runs on demand, never as part of `mvn test`,
+and has no automated pass/fail. Comparing renders against a stored baseline to catch
+unintended visual regressions is a deliberately separate, not-yet-built follow-up.
