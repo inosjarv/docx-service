@@ -47,9 +47,11 @@ sample/gallery/DocxToImages.java      NEW  (OfficeManager, WordDocument, Path) -
 sample/gallery/GalleryIndexWriter.java NEW  (fixture name -> page PNG paths) -> index.html content
 sample/gallery/GalleryMain.java       NEW  orchestrates all of the above; the runnable entry point
 sample/RichTextSampleMain.java        NEW  a small standalone bold/italic/underline/nesting sample
-sample/HtmlSampleMain.java            REMOVE  superseded by GalleryMain (see below)
-sample/PostmortemHtmlSampleMain.java  REMOVE  superseded by GalleryMain (see below)
 ```
+
+`HtmlSampleMain` and `PostmortemHtmlSampleMain` are kept as-is, unchanged — useful as a
+quick single-document demo of the HTML export path on its own, separate from the gallery.
+`GalleryMain` is purely additive alongside them, not a replacement.
 
 All five new classes live in a new `sample.gallery` subpackage — kept apart from
 `sample` because they're infrastructure *for* looking at the samples, not a sample
@@ -149,16 +151,12 @@ On a standard Homebrew-cask install, LibreOffice lands at
 `/Applications/LibreOffice.app`, one of the paths JODConverter's default office-home
 detection already checks — no explicit configuration needed for the common case.
 
-## Superseding `HtmlSampleMain` / `PostmortemHtmlSampleMain`
+## `HtmlSampleMain` / `PostmortemHtmlSampleMain` stay
 
-Both exist today purely to let a human eyeball one document's HTML export by hand-running
-a `main()` and opening a timestamped file. `GalleryMain` does exactly that, for every
-fixture, in one run, plus real rendering fidelity — keeping the old pair around would mean
-two overlapping "look at this by hand" mechanisms for the same underlying need. This spec
-removes both classes and their `html-sample`/`postmortem-html` exec-plugin executions
-(replaced by one `gallery` execution). If you'd rather keep them as a lighter-weight,
-LibreOffice-free fallback, say so before the plan is written — the removal is the default
-scope here, not the only workable option.
+Kept deliberately: they're a fast, LibreOffice-free way to demo the HTML export path on
+one document, which is a different purpose from the gallery's "compare every fixture's
+real rendering at once." Their `html-sample`/`postmortem-html` exec-plugin executions are
+untouched; `gallery` is added as a new execution alongside them.
 
 ## Maven wiring
 
@@ -177,8 +175,8 @@ scope here, not the only workable option.
 </dependency>
 ```
 
-`html-sample`/`postmortem-html` exec-plugin executions are removed; a new `gallery`
-execution is added the same way, running `com.example.docx.sample.gallery.GalleryMain`:
+A new `gallery` execution is added alongside the existing ones, the same way, running
+`com.example.docx.sample.gallery.GalleryMain`:
 
 ```
 mvn exec:java@gallery
@@ -213,9 +211,8 @@ src="...">` for every given path, in order — no LibreOffice involved.
 `DOCUMENTATION.md` gains a short "Document gallery" section: what it's for, that it
 requires a local LibreOffice install (with the Homebrew-cask path noted as the common
 case), how to run it (`mvn exec:java@gallery`), and where the output lands
-(`target/gallery/index.html`). `README.md`'s tooling-overview line, if any references the
-removed `html-sample`/`postmortem-html` executions, is updated to point at `gallery`
-instead.
+(`target/gallery/index.html`) — alongside, not replacing, the existing coverage of
+`html-sample`/`postmortem-html`.
 
 ## Out of scope
 
