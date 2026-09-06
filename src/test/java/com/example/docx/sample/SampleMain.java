@@ -112,11 +112,11 @@ public final class SampleMain {
     }
 
     /**
-     * Builds the same document {@link #main} writes to disk, so other samples (such as
-     * {@code HtmlSampleMain}) can render it in a different format without duplicating
+     * Builds the same document {@link #main} writes to disk, so other tools (such as
+     * {@code HtmlSampleMain} and the document gallery) can render it without duplicating
      * the content.
      */
-    static WordDocument build() {
+    public static WordDocument build() {
         var builder = WordDocument.builder()
                 .pageSetup(PageSetup.builder().a4().marginsTwips(851).build())
                 .heading("Quarterly Report", TextStyle.builder()
