@@ -646,7 +646,7 @@ browser tab, without hand-running each `*SampleMain` and opening its output one 
 time:
 
 ```bash
-mvn exec:java@gallery
+JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@gallery
 ```
 
 Requires a local LibreOffice install — real rendering fidelity needs a real OOXML layout

@@ -15,7 +15,8 @@ import org.jodconverter.local.office.LocalOfficeManager;
  * without hand-running each sample main and opening its output one file at a time.
  *
  * <p>Requires a local LibreOffice install (a standard Homebrew-cask install on macOS is
- * auto-detected; see DOCUMENTATION.md). Run with {@code mvn exec:java@gallery}.
+ * auto-detected; see DOCUMENTATION.md). Run with
+ * {@code JAVA_HOME=$(/usr/libexec/java_home -v 25) mvn test-compile exec:java@gallery}.
  */
 public final class GalleryMain {
 
@@ -25,10 +26,17 @@ public final class GalleryMain {
     }
 
     public static void main(String[] args) throws IOException {
-        OfficeManager officeManager = LocalOfficeManager.builder().install().build();
+        OfficeManager officeManager;
         try {
+            // Catching the broader RuntimeException here (not just OfficeException) is
+            // deliberate: JODConverter's builder().build() throws unchecked when
+            // LibreOffice can't be found (e.g. NullPointerException when auto-detection
+            // finds nothing, IllegalStateException for an invalid configured path),
+            // before officeManager.start() ever gets a chance to throw the checked
+            // OfficeException. Don't narrow this back to OfficeException alone.
+            officeManager = LocalOfficeManager.builder().install().build();
             officeManager.start();
-        } catch (OfficeException e) {
+        } catch (OfficeException | RuntimeException e) {
             System.err.println("Could not start LibreOffice: " + e.getMessage());
             System.err.println("Install it (e.g. `brew install --cask libreoffice` on "
                     + "macOS) and try again. See DOCUMENTATION.md's \"Document gallery\" "
@@ -74,8 +82,9 @@ public final class GalleryMain {
                     .toList();
             return RenderedFixture.success(fixture.name(), relativePages);
         } catch (Exception e) {
-            System.err.println("Failed to render '" + fixture.name() + "': " + e.getMessage());
-            return RenderedFixture.failure(fixture.name(), String.valueOf(e.getMessage()));
+            System.err.println("Failed to render '" + fixture.name() + "': " + e);
+            e.printStackTrace();
+            return RenderedFixture.failure(fixture.name(), e.toString());
         }
     }
 }
