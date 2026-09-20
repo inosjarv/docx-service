@@ -45,6 +45,12 @@ public final class Units {
         return roundHalfUp(points * 8.0, "points");
     }
 
+    /** Twips, like page geometry: 1 pt is 1/72 inch, so 20 twips exactly. */
+    public static int pointsToTwips(double points) {
+        check(points, "points");
+        return roundHalfUp(points * 20.0, "points");
+    }
+
     private static void check(double value, String unit) {
         if (!Double.isFinite(value)) {
             throw new DocumentGenerationException(unit + " must be a finite number, got " + value);

@@ -6,6 +6,8 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.page.PageSetup;
+import com.example.docx.style.LineSpacing;
+import com.example.docx.style.ParagraphStyle;
 import com.example.docx.style.TableStyle;
 import com.example.docx.style.TextStyle;
 import java.io.ByteArrayOutputStream;
@@ -97,6 +99,26 @@ class WordDocumentHtmlTest {
                 "expected the font to be embedded as a data: URI, not linked, in " + html);
         assertTrue(html.matches("(?s).*body\\s*\\{[^}]*font-family[^}]*\\}.*"),
                 "expected a body rule selecting the embedded font in " + html);
+    }
+
+    @Test
+    void toHtmlRendersLineSpacingAsCssLineHeight() throws Exception {
+        ParagraphStyle doubleSpaced = ParagraphStyle.builder()
+                .lineSpacing(LineSpacing.multiple(2.0))
+                .build();
+        WordDocument doc = WordDocument.builder()
+                .heading("Report")
+                .paragraph("Double-spaced body text.", TextStyle.body(), doubleSpaced)
+                .build();
+
+        String html = assertWellFormedXml(doc.toHtml());
+
+        // docx4j's own DocDefaults baseline already carries a line-height (115%), so
+        // asserting the rule merely exists would pass even without this paragraph's
+        // own spacing -- pin the exact value a 2.0 multiple must produce instead.
+        assertTrue(html.contains("line-height: 200%"),
+                "expected docx4j to translate the 2.0 line spacing multiple into "
+                        + "line-height: 200% in " + html);
     }
 
     @Test

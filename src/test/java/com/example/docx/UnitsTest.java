@@ -60,6 +60,15 @@ class UnitsTest {
     }
 
     @Test
+    void pointsToTwips() {
+        // 1440 twips/inch, 72 pt/inch: 20 twips per point, exactly.
+        assertEquals(20, Units.pointsToTwips(1.0));
+        assertEquals(280, Units.pointsToTwips(14.0));
+        assertEquals(230, Units.pointsToTwips(11.5));
+        assertEquals(0, Units.pointsToTwips(0.0));
+    }
+
+    @Test
     void pointsToEighths() {
         // Border width is in eighths of a point, unlike font size (half-points).
         assertEquals(8, Units.pointsToEighths(1.0));
