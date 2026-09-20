@@ -10,9 +10,9 @@ import org.junit.jupiter.api.Test;
 class GalleryFixturesTest {
 
     @Test
-    void listsTheThreeExpectedFixturesInOrder() {
+    void listsTheExpectedFixturesInOrder() {
         List<GalleryFixture> fixtures = GalleryFixtures.all();
-        assertEquals(List.of("sample", "postmortem", "rich-text"),
+        assertEquals(List.of("sample", "postmortem", "rich-text", "line-spacing"),
                 fixtures.stream().map(GalleryFixture::name).toList());
     }
 

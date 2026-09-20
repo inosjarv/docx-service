@@ -41,6 +41,7 @@ public final class ParagraphStyle {
 
     private final int spaceBeforeTwips;
     private final int spaceAfterTwips;
+    private final LineSpacing lineSpacing;
     private final boolean keepWithNext;
     private final boolean keepLines;
     private final boolean widowControl;
@@ -50,6 +51,7 @@ public final class ParagraphStyle {
     private ParagraphStyle(Builder b) {
         this.spaceBeforeTwips = b.spaceBeforeTwips;
         this.spaceAfterTwips = b.spaceAfterTwips;
+        this.lineSpacing = b.lineSpacing;
         this.keepWithNext = b.keepWithNext;
         this.keepLines = b.keepLines;
         this.widowControl = b.widowControl;
@@ -100,6 +102,11 @@ public final class ParagraphStyle {
         return spaceAfterTwips;
     }
 
+    /** {@code null} means Word's own default: single spacing. */
+    public LineSpacing lineSpacing() {
+        return lineSpacing;
+    }
+
     public boolean keepWithNext() {
         return keepWithNext;
     }
@@ -128,6 +135,10 @@ public final class ParagraphStyle {
         PPrBase.Spacing spacing = factory.createPPrBaseSpacing();
         spacing.setBefore(BigInteger.valueOf(spaceBeforeTwips));
         spacing.setAfter(BigInteger.valueOf(spaceAfterTwips));
+        if (lineSpacing != null) {
+            spacing.setLine(BigInteger.valueOf(lineSpacing.lineTwips()));
+            spacing.setLineRule(lineSpacing.rule());
+        }
         pPr.setSpacing(spacing);
 
         // Left is Word's own default, so LEFT emits nothing rather than an explicit
@@ -166,6 +177,7 @@ public final class ParagraphStyle {
 
         private int spaceBeforeTwips = 0;
         private int spaceAfterTwips = BODY_SPACE_AFTER_TWIPS;
+        private LineSpacing lineSpacing = null;
         private boolean keepWithNext = false;
         private boolean keepLines = false;
         private boolean widowControl = true;
@@ -182,6 +194,15 @@ public final class ParagraphStyle {
 
         public Builder spaceAfterTwips(int twips) {
             this.spaceAfterTwips = twips;
+            return this;
+        }
+
+        /** Unset by default: Word's own single spacing. */
+        public Builder lineSpacing(LineSpacing lineSpacing) {
+            if (lineSpacing == null) {
+                throw new DocumentGenerationException("line spacing must not be null");
+            }
+            this.lineSpacing = lineSpacing;
             return this;
         }
 

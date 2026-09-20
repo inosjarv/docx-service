@@ -11,6 +11,7 @@ import com.example.docx.DocumentGenerationException;
 import java.math.BigInteger;
 import org.docx4j.wml.JcEnumeration;
 import org.docx4j.wml.PPr;
+import org.docx4j.wml.STLineSpacingRule;
 import org.junit.jupiter.api.Test;
 
 class ParagraphStyleTest {
@@ -128,6 +129,41 @@ class ParagraphStyleTest {
         assertNull(pPr.getKeepLines());
         assertNull(pPr.getWidowControl());
         assertNull(pPr.getPageBreakBefore());
+    }
+
+    @Test
+    void byDefaultEmitsNoLineSpacing() {
+        PPr pPr = ParagraphStyle.body().toPPr();
+        // Absent, not "auto" with some implied value -- Word's own single spacing.
+        assertNull(pPr.getSpacing().getLine());
+        assertNull(pPr.getSpacing().getLineRule());
+    }
+
+    @Test
+    void lineSpacingMultipleEmitsAutoRuleInTwentiethsOfALine() {
+        PPr pPr = ParagraphStyle.builder().lineSpacing(LineSpacing.multiple(1.5)).build().toPPr();
+        // 240 twentieths of a line is single spacing; 1.5x is 360.
+        assertEquals(BigInteger.valueOf(360), pPr.getSpacing().getLine());
+        assertEquals(STLineSpacingRule.AUTO, pPr.getSpacing().getLineRule());
+    }
+
+    @Test
+    void lineSpacingExactPtEmitsExactRuleInTwips() {
+        PPr pPr = ParagraphStyle.builder().lineSpacing(LineSpacing.exactPt(14)).build().toPPr();
+        assertEquals(BigInteger.valueOf(280), pPr.getSpacing().getLine());
+        assertEquals(STLineSpacingRule.EXACT, pPr.getSpacing().getLineRule());
+    }
+
+    @Test
+    void rejectsNonPositiveLineSpacingMultiple() {
+        assertThrows(DocumentGenerationException.class, () -> LineSpacing.multiple(0));
+        assertThrows(DocumentGenerationException.class, () -> LineSpacing.multiple(-1.5));
+    }
+
+    @Test
+    void rejectsNullLineSpacing() {
+        assertThrows(DocumentGenerationException.class,
+                () -> ParagraphStyle.builder().lineSpacing(null));
     }
 
     @Test
