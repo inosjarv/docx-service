@@ -1,5 +1,6 @@
 package com.example.docx.sample.gallery;
 
+import com.example.docx.sample.LineSpacingSampleMain;
 import com.example.docx.sample.PostmortemSampleMain;
 import com.example.docx.sample.RichTextSampleMain;
 import com.example.docx.sample.SampleMain;
@@ -18,6 +19,7 @@ public final class GalleryFixtures {
         return List.of(
                 new GalleryFixture("sample", SampleMain::build),
                 new GalleryFixture("postmortem", PostmortemSampleMain::build),
-                new GalleryFixture("rich-text", RichTextSampleMain::build));
+                new GalleryFixture("rich-text", RichTextSampleMain::build),
+                new GalleryFixture("line-spacing", LineSpacingSampleMain::build));
     }
 }
