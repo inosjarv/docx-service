@@ -1,6 +1,7 @@
 package com.example.docx.content;
 
 import com.example.docx.DocumentGenerationException;
+import com.example.docx.style.Alignment;
 import com.example.docx.style.ParagraphStyle;
 import com.example.docx.style.TableBorderStyle;
 import com.example.docx.style.TableStyle;
@@ -45,12 +46,6 @@ public final class Tables {
     /** {@code dxa} is twentieths of a point, i.e. the twips used everywhere else. */
     private static final String TWIPS = "dxa";
 
-    /** Body spacing looks wrong inside a cell, so cell paragraphs are compact. */
-    private static final ParagraphStyle CELL_PARAGRAPH = ParagraphStyle.builder()
-            .spaceBeforeTwips(0)
-            .spaceAfterTwips(0)
-            .build();
-
     private Tables() {
     }
 
@@ -61,18 +56,39 @@ public final class Tables {
 
         ObjectFactory factory = Context.getWmlObjectFactory();
         int[] columnWidths = columnWidths(widthTwips, headers.size());
+        ParagraphStyle[] columnStyles = columnParagraphStyles(style, headers.size());
 
         Tbl table = factory.createTbl();
         table.setTblPr(tableProperties(factory, widthTwips));
         table.setTblGrid(grid(factory, columnWidths));
 
         table.getContent().add(row(factory, headers, style.headerText(),
-                style.headerBorder(), columnWidths, true));
+                style.headerBorder(), columnWidths, columnStyles, true));
         for (List<String> values : rows) {
             table.getContent().add(row(factory, values, style.bodyText(),
-                    style.bodyBorder(), columnWidths, false));
+                    style.bodyBorder(), columnWidths, columnStyles, false));
         }
         return table;
+    }
+
+    /**
+     * One compact {@link ParagraphStyle} per column, carrying that column's alignment.
+     * Header and body cells in the same column share it -- a right-aligned numeric
+     * column reads correctly with its header right-aligned too.
+     */
+    private static ParagraphStyle[] columnParagraphStyles(TableStyle style, int columns) {
+        List<Alignment> columnAlignments = style.columnAlignments();
+        ParagraphStyle[] styles = new ParagraphStyle[columns];
+        for (int i = 0; i < columns; i++) {
+            Alignment alignment = i < columnAlignments.size() ? columnAlignments.get(i) : Alignment.LEFT;
+            // Body spacing looks wrong inside a cell, so cell paragraphs are compact.
+            styles[i] = ParagraphStyle.builder()
+                    .spaceBeforeTwips(0)
+                    .spaceAfterTwips(0)
+                    .alignment(alignment)
+                    .build();
+        }
+        return styles;
     }
 
     private static void validate(List<String> headers, List<List<String>> rows,
@@ -153,7 +169,8 @@ public final class Tables {
     }
 
     private static Tr row(ObjectFactory factory, List<String> values, TextStyle textStyle,
-                          TableBorderStyle border, int[] columnWidths, boolean header) {
+                          TableBorderStyle border, int[] columnWidths,
+                          ParagraphStyle[] columnStyles, boolean header) {
         Tr row = factory.createTr();
         if (header) {
             // Repeats the header at the top of every page the table spans.
@@ -164,13 +181,14 @@ public final class Tables {
             row.setTrPr(properties);
         }
         for (int i = 0; i < values.size(); i++) {
-            row.getContent().add(cell(factory, values.get(i), textStyle, border, columnWidths[i]));
+            row.getContent().add(
+                    cell(factory, values.get(i), textStyle, border, columnWidths[i], columnStyles[i]));
         }
         return row;
     }
 
     private static Tc cell(ObjectFactory factory, String text, TextStyle textStyle,
-                           TableBorderStyle border, int widthTwips) {
+                           TableBorderStyle border, int widthTwips, ParagraphStyle paragraphStyle) {
         Tc cell = factory.createTc();
 
         TcPr properties = factory.createTcPr();
@@ -188,14 +206,14 @@ public final class Tables {
         // than routing to Paragraphs.of, which would throw DocumentGenerationException.
         String value = text == null ? "" : text;
         cell.getContent().add(value.isBlank()
-                ? emptyParagraph(factory)
-                : Paragraphs.of(value, textStyle, CELL_PARAGRAPH));
+                ? emptyParagraph(factory, paragraphStyle)
+                : Paragraphs.of(value, textStyle, paragraphStyle));
         return cell;
     }
 
-    private static P emptyParagraph(ObjectFactory factory) {
+    private static P emptyParagraph(ObjectFactory factory, ParagraphStyle paragraphStyle) {
         P paragraph = factory.createP();
-        paragraph.setPPr(CELL_PARAGRAPH.toPPr());
+        paragraph.setPPr(paragraphStyle.toPPr());
         return paragraph;
     }
 }

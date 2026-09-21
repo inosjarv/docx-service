@@ -7,6 +7,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.DocumentGenerationException;
+import com.example.docx.style.Alignment;
 import com.example.docx.style.BorderLine;
 import com.example.docx.style.Edge;
 import com.example.docx.style.TableBorderStyle;
@@ -15,6 +16,7 @@ import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import org.docx4j.wml.JcEnumeration;
 import org.docx4j.wml.P;
 import org.docx4j.wml.Tbl;
 import org.docx4j.wml.Tc;
@@ -44,6 +46,10 @@ class TablesTest {
 
     private static Tc cellAt(Tr row, int index) {
         return (Tc) row.getContent().get(index);
+    }
+
+    private static P paragraphIn(Tc cell) {
+        return (P) cell.getContent().stream().filter(o -> o instanceof P).findFirst().orElseThrow();
     }
 
     @Test
@@ -110,6 +116,39 @@ class TablesTest {
                 .build();
         Tbl table = Tables.of(HEADERS, ROWS, bare, 10204);
         assertNull(cellAt(rowAt(table, 0), 0).getTcPr().getTcBorders());
+    }
+
+    @Test
+    void columnsCarryTheirOwnAlignmentInBothHeaderAndBody() {
+        TableStyle aligned = TableStyle.builder()
+                .columnAlignments(List.of(Alignment.LEFT, Alignment.RIGHT, Alignment.CENTER))
+                .build();
+        Tbl table = Tables.of(HEADERS, ROWS, aligned, 10204);
+
+        assertNull(paragraphIn(cellAt(rowAt(table, 0), 0)).getPPr().getJc(), "LEFT must emit no w:jc");
+        assertEquals(JcEnumeration.RIGHT, paragraphIn(cellAt(rowAt(table, 0), 1)).getPPr().getJc().getVal(),
+                "header cell must match its column's alignment");
+        assertEquals(JcEnumeration.RIGHT, paragraphIn(cellAt(rowAt(table, 1), 1)).getPPr().getJc().getVal(),
+                "body cell must match its column's alignment");
+        assertEquals(JcEnumeration.CENTER, paragraphIn(cellAt(rowAt(table, 0), 2)).getPPr().getJc().getVal());
+    }
+
+    @Test
+    void columnsBeyondTheAlignmentListDefaultToLeft() {
+        TableStyle aligned = TableStyle.builder().columnAlignments(List.of(Alignment.RIGHT)).build();
+        Tbl table = Tables.of(HEADERS, ROWS, aligned, 10204);
+
+        assertNull(paragraphIn(cellAt(rowAt(table, 0), 1)).getPPr().getJc(),
+                "column 1 has no explicit alignment, must default to LEFT");
+        assertNull(paragraphIn(cellAt(rowAt(table, 0), 2)).getPPr().getJc());
+    }
+
+    @Test
+    void defaultTableStyleAlignsEveryColumnLeft() {
+        Tbl table = Tables.of(HEADERS, ROWS, STYLE, 10204);
+        for (int col = 0; col < HEADERS.size(); col++) {
+            assertNull(paragraphIn(cellAt(rowAt(table, 0), col)).getPPr().getJc());
+        }
     }
 
     @Test

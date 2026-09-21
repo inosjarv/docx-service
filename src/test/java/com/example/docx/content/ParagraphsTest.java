@@ -10,6 +10,7 @@ import com.example.docx.style.ParagraphStyle;
 import com.example.docx.style.TextStyle;
 import jakarta.xml.bind.JAXBElement;
 import java.math.BigInteger;
+import java.util.List;
 import org.docx4j.wml.P;
 import org.docx4j.wml.R;
 import org.docx4j.wml.Text;
@@ -19,8 +20,13 @@ class ParagraphsTest {
 
     /** Freshly built runs hold a bare Text; reloaded ones hold a JAXBElement. */
     private static Text textOf(R run) {
-        Object first = run.getContent().get(0);
-        return (Text) (first instanceof JAXBElement<?> je ? je.getValue() : first);
+        return textAt(run.getContent(), 0);
+    }
+
+    /** Same unwrapping as {@link #textOf}, for a content item that isn't the first. */
+    private static Text textAt(List<Object> content, int index) {
+        Object item = content.get(index);
+        return (Text) (item instanceof JAXBElement<?> je ? je.getValue() : item);
     }
 
     @Test
@@ -76,6 +82,42 @@ class ParagraphsTest {
         assertThrows(DocumentGenerationException.class, () -> Paragraphs.run("  ", TextStyle.body()));
         assertThrows(DocumentGenerationException.class, () -> Paragraphs.run(null, TextStyle.body()));
         assertThrows(DocumentGenerationException.class, () -> Paragraphs.run("Hi", null));
+    }
+
+    @Test
+    void runSplitsTabsIntoRealTabElementsBetweenTextSegments() {
+        R run = Paragraphs.run("Label:\tValue", TextStyle.body());
+
+        assertEquals(3, run.getContent().size());
+        assertEquals("Label:", textAt(run.getContent(), 0).getValue());
+        assertTrue(run.getContent().get(1) instanceof org.docx4j.wml.R.Tab,
+                "a tab character must become a real <w:tab/>, not literal text");
+        assertEquals("Value", textAt(run.getContent(), 2).getValue());
+    }
+
+    @Test
+    void runWithConsecutiveOrEdgeTabsEmitsNoEmptyTextSegments() {
+        R leading = Paragraphs.run("\tValue", TextStyle.body());
+        assertEquals(2, leading.getContent().size(), "no empty Text before the tab");
+        assertTrue(leading.getContent().get(0) instanceof org.docx4j.wml.R.Tab);
+        assertEquals("Value", textAt(leading.getContent(), 1).getValue());
+
+        R trailing = Paragraphs.run("Label:\t", TextStyle.body());
+        assertEquals(2, trailing.getContent().size(), "no empty Text after the tab");
+        assertEquals("Label:", textAt(trailing.getContent(), 0).getValue());
+        assertTrue(trailing.getContent().get(1) instanceof org.docx4j.wml.R.Tab);
+
+        R consecutive = Paragraphs.run("A\t\tB", TextStyle.body());
+        assertEquals(4, consecutive.getContent().size(), "two tabs, nothing empty between them");
+        assertTrue(consecutive.getContent().get(1) instanceof org.docx4j.wml.R.Tab);
+        assertTrue(consecutive.getContent().get(2) instanceof org.docx4j.wml.R.Tab);
+    }
+
+    @Test
+    void runWithoutTabsStillProducesExactlyOneTextSegment() {
+        R run = Paragraphs.run("No tabs here", TextStyle.body());
+        assertEquals(1, run.getContent().size());
+        assertEquals("No tabs here", textOf(run).getValue());
     }
 
     @Test

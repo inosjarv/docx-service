@@ -2,12 +2,15 @@ package com.example.docx.style;
 
 import com.example.docx.DocumentGenerationException;
 import java.math.BigInteger;
+import java.util.List;
 import org.docx4j.jaxb.Context;
 import org.docx4j.wml.BooleanDefaultTrue;
+import org.docx4j.wml.CTTabStop;
 import org.docx4j.wml.Jc;
 import org.docx4j.wml.ObjectFactory;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.PPrBase;
+import org.docx4j.wml.Tabs;
 
 /**
  * Immutable paragraph-level formatting: spacing, alignment, and how the paragraph
@@ -42,6 +45,7 @@ public final class ParagraphStyle {
     private final int spaceBeforeTwips;
     private final int spaceAfterTwips;
     private final LineSpacing lineSpacing;
+    private final List<TabStop> tabStops;
     private final boolean keepWithNext;
     private final boolean keepLines;
     private final boolean widowControl;
@@ -52,6 +56,7 @@ public final class ParagraphStyle {
         this.spaceBeforeTwips = b.spaceBeforeTwips;
         this.spaceAfterTwips = b.spaceAfterTwips;
         this.lineSpacing = b.lineSpacing;
+        this.tabStops = b.tabStops;
         this.keepWithNext = b.keepWithNext;
         this.keepLines = b.keepLines;
         this.widowControl = b.widowControl;
@@ -107,6 +112,11 @@ public final class ParagraphStyle {
         return lineSpacing;
     }
 
+    /** Empty by default: Word's own tab stops, every half inch. */
+    public List<TabStop> tabStops() {
+        return tabStops;
+    }
+
     public boolean keepWithNext() {
         return keepWithNext;
     }
@@ -140,6 +150,17 @@ public final class ParagraphStyle {
             spacing.setLineRule(lineSpacing.rule());
         }
         pPr.setSpacing(spacing);
+
+        if (!tabStops.isEmpty()) {
+            Tabs tabs = factory.createTabs();
+            for (TabStop stop : tabStops) {
+                CTTabStop ctTabStop = factory.createCTTabStop();
+                ctTabStop.setPos(BigInteger.valueOf(stop.positionTwips()));
+                ctTabStop.setVal(stop.alignment().stTabJc());
+                tabs.getTab().add(ctTabStop);
+            }
+            pPr.setTabs(tabs);
+        }
 
         // Left is Word's own default, so LEFT emits nothing rather than an explicit
         // w:jc — same principle as the toggles below.
@@ -178,6 +199,7 @@ public final class ParagraphStyle {
         private int spaceBeforeTwips = 0;
         private int spaceAfterTwips = BODY_SPACE_AFTER_TWIPS;
         private LineSpacing lineSpacing = null;
+        private List<TabStop> tabStops = List.of();
         private boolean keepWithNext = false;
         private boolean keepLines = false;
         private boolean widowControl = true;
@@ -203,6 +225,15 @@ public final class ParagraphStyle {
                 throw new DocumentGenerationException("line spacing must not be null");
             }
             this.lineSpacing = lineSpacing;
+            return this;
+        }
+
+        /** Empty by default: Word's own tab stops, every half inch. */
+        public Builder tabStops(List<TabStop> tabStops) {
+            if (tabStops == null) {
+                throw new DocumentGenerationException("tab stops must not be null");
+            }
+            this.tabStops = List.copyOf(tabStops);
             return this;
         }
 
