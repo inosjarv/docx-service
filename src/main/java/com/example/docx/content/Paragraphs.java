@@ -24,6 +24,12 @@ public final class Paragraphs {
     /**
      * A styled {@code w:r} holding {@code text}. Reused by {@link #of} and by hyperlinks,
      * which need a run without a surrounding paragraph.
+     *
+     * <p>A literal tab character in {@code text} becomes a real {@code <w:tab/>} rather
+     * than a raw tab byte inside {@code <w:t>} -- OOXML consumers render the latter
+     * inconsistently, since it isn't the spec's tab-stop markup. Word jumps a
+     * {@code <w:tab/>} to the paragraph's default tab stops unless overridden by
+     * {@link com.example.docx.style.ParagraphStyle#tabStops()}.
      */
     public static R run(String text, TextStyle textStyle) {
         if (text == null || text.isBlank()) {
@@ -34,16 +40,27 @@ public final class Paragraphs {
         }
 
         ObjectFactory factory = Context.getWmlObjectFactory();
-
-        Text value = factory.createText();
-        value.setValue(text);
-        // Without xml:space=preserve, leading and trailing spaces vanish silently.
-        value.setSpace("preserve");
-
         R run = factory.createR();
-        run.getContent().add(value);
         run.setRPr(textStyle.toRPr());
+
+        String[] segments = text.split("\t", -1);
+        for (int i = 0; i < segments.length; i++) {
+            if (i > 0) {
+                run.getContent().add(factory.createRTab());
+            }
+            if (!segments[i].isEmpty()) {
+                run.getContent().add(text(factory, segments[i]));
+            }
+        }
         return run;
+    }
+
+    private static Text text(ObjectFactory factory, String value) {
+        Text text = factory.createText();
+        text.setValue(value);
+        // Without xml:space=preserve, leading and trailing spaces vanish silently.
+        text.setSpace("preserve");
+        return text;
     }
 
     /** A {@code w:p} holding one styled {@code w:r} with the given text. */

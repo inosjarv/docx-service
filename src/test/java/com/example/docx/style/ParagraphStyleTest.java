@@ -9,9 +9,12 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import com.example.docx.DocumentGenerationException;
 import java.math.BigInteger;
+import java.util.List;
+import org.docx4j.wml.CTTabStop;
 import org.docx4j.wml.JcEnumeration;
 import org.docx4j.wml.PPr;
 import org.docx4j.wml.STLineSpacingRule;
+import org.docx4j.wml.STTabJc;
 import org.junit.jupiter.api.Test;
 
 class ParagraphStyleTest {
@@ -164,6 +167,54 @@ class ParagraphStyleTest {
     void rejectsNullLineSpacing() {
         assertThrows(DocumentGenerationException.class,
                 () -> ParagraphStyle.builder().lineSpacing(null));
+    }
+
+    @Test
+    void byDefaultEmitsNoTabStops() {
+        assertNull(ParagraphStyle.body().toPPr().getTabs());
+    }
+
+    @Test
+    void tabStopEmitsPositionAndAlignment() {
+        PPr pPr = ParagraphStyle.builder()
+                .tabStops(List.of(TabStop.at(2880, TabStopAlignment.RIGHT)))
+                .build().toPPr();
+
+        assertEquals(1, pPr.getTabs().getTab().size());
+        CTTabStop tab = pPr.getTabs().getTab().get(0);
+        assertEquals(BigInteger.valueOf(2880), tab.getPos());
+        assertEquals(STTabJc.RIGHT, tab.getVal());
+    }
+
+    @Test
+    void multipleTabStopsPreserveOrder() {
+        PPr pPr = ParagraphStyle.builder()
+                .tabStops(List.of(
+                        TabStop.at(720, TabStopAlignment.LEFT),
+                        TabStop.at(2880, TabStopAlignment.RIGHT)))
+                .build().toPPr();
+
+        assertEquals(List.of(BigInteger.valueOf(720), BigInteger.valueOf(2880)),
+                pPr.getTabs().getTab().stream().map(CTTabStop::getPos).toList());
+        assertEquals(List.of(STTabJc.LEFT, STTabJc.RIGHT),
+                pPr.getTabs().getTab().stream().map(CTTabStop::getVal).toList());
+    }
+
+    @Test
+    void rejectsNegativeTabStopPosition() {
+        assertThrows(DocumentGenerationException.class,
+                () -> TabStop.at(-1, TabStopAlignment.LEFT));
+    }
+
+    @Test
+    void rejectsNullTabStopAlignment() {
+        assertThrows(DocumentGenerationException.class, () -> TabStop.at(720, null));
+    }
+
+    @Test
+    void rejectsNullTabStopsList() {
+        assertThrows(DocumentGenerationException.class,
+                () -> ParagraphStyle.builder().tabStops(null));
     }
 
     @Test

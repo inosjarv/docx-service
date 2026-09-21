@@ -1,6 +1,7 @@
 package com.example.docx.style;
 
 import com.example.docx.DocumentGenerationException;
+import java.util.List;
 
 /** Immutable table appearance: header and body borders, and the text style of each. */
 public final class TableStyle {
@@ -9,12 +10,14 @@ public final class TableStyle {
     private final TableBorderStyle bodyBorder;
     private final TextStyle headerText;
     private final TextStyle bodyText;
+    private final List<Alignment> columnAlignments;
 
     private TableStyle(Builder b) {
         this.headerBorder = b.headerBorder;
         this.bodyBorder = b.bodyBorder;
         this.headerText = b.headerText;
         this.bodyText = b.bodyText;
+        this.columnAlignments = b.columnAlignments;
     }
 
     public static Builder builder() {
@@ -42,6 +45,15 @@ public final class TableStyle {
         return bodyText;
     }
 
+    /**
+     * Per-column text alignment, by index. Empty by default: every column {@code LEFT}.
+     * A column past the end of this list also gets {@code LEFT} -- reusing one style
+     * across tables of different widths degrades gracefully rather than erroring.
+     */
+    public List<Alignment> columnAlignments() {
+        return columnAlignments;
+    }
+
     /** Fluent builder. Every field is defaulted; {@code TableStyle.defaults()} is valid alone. */
     public static final class Builder {
 
@@ -50,6 +62,7 @@ public final class TableStyle {
         private TextStyle headerText =
                 TextStyle.builder().font("Calibri").sizePt(11).bold(true).color("000000").build();
         private TextStyle bodyText = TextStyle.body();
+        private List<Alignment> columnAlignments = List.of();
 
         private Builder() {
         }
@@ -71,6 +84,12 @@ public final class TableStyle {
 
         public Builder bodyText(TextStyle bodyText) {
             this.bodyText = requireNonNull(bodyText, "body text style");
+            return this;
+        }
+
+        /** Empty by default: every column {@code LEFT}. */
+        public Builder columnAlignments(List<Alignment> columnAlignments) {
+            this.columnAlignments = List.copyOf(requireNonNull(columnAlignments, "column alignments"));
             return this;
         }
 

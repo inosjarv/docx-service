@@ -142,6 +142,10 @@ public final class SampleMain {
                                 .bodyBorder(TableBorderStyle.builder()
                                         .color("#BFBFBF").widthPt(0.5)
                                         .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
+                                // Region reads left to right; the three numeric columns
+                                // read right to left, so their headers and figures line up.
+                                .columnAlignments(List.of(
+                                        Alignment.LEFT, Alignment.RIGHT, Alignment.RIGHT, Alignment.RIGHT))
                                 .build());
 
         for (int section = 0; section < SECTION_TITLES.size(); section++) {

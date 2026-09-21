@@ -165,7 +165,7 @@ public final class PostmortemSampleMain {
                                 "Status page updated to \"resolved\"; incident channel "
                                         + "archived.",
                                 "J. Alvarez")),
-                sectionTableStyle(timelineColour));
+                sectionTableStyle(timelineColour, List.of()));
 
         // --- Detection and response ----------------------------------------------
         String detectionColour = "#843C0C";
@@ -341,7 +341,10 @@ public final class PostmortemSampleMain {
                         List.of("APAC", "~310", "Automatic 10% credit issued"),
                         List.of("Enterprise accounts", "0",
                                 "Not affected — routed via dedicated gateway pool")),
-                sectionTableStyle(impactColour));
+                // "Users affected" is a count, so it reads right to left like the other
+                // numeric columns in this document.
+                sectionTableStyle(impactColour,
+                        List.of(Alignment.LEFT, Alignment.RIGHT, Alignment.LEFT)));
 
         // --- Remediation and follow-up ---------------------------------------------
         String remediationColour = "#B7950B";
@@ -372,7 +375,10 @@ public final class PostmortemSampleMain {
                                 "Checkout team", "2026-06-25", "Not started"),
                         List.of("Share this postmortem at the cross-team reliability review",
                                 "Incident commander", "2026-05-16", "Done")),
-                sectionTableStyle(remediationColour));
+                // Short, fixed-shape values -- a date and a one/two-word status -- read
+                // better centred than pinned to the left edge of a wide column.
+                sectionTableStyle(remediationColour, List.of(
+                        Alignment.LEFT, Alignment.LEFT, Alignment.CENTER, Alignment.CENTER)));
         builder.paragraph(
                 "None of the follow-up actions above are blocked on each other, and the "
                         + "two rated \"Done\" were completed within a week of the incident. "
@@ -400,8 +406,11 @@ public final class PostmortemSampleMain {
         return TextStyle.builder().font("Calibri").sizePt(11).bold(false).color(colour).build();
     }
 
-    /** A table bordered in the section colour on the header, hairline grey on the body. */
-    private static TableStyle sectionTableStyle(String colour) {
+    /**
+     * A table bordered in the section colour on the header, hairline grey on the body,
+     * with the given per-column alignment (pass {@code List.of()} for every column left).
+     */
+    private static TableStyle sectionTableStyle(String colour, List<Alignment> columnAlignments) {
         return TableStyle.builder()
                 .headerBorder(TableBorderStyle.builder()
                         .color(colour).widthPt(1.0)
@@ -409,6 +418,7 @@ public final class PostmortemSampleMain {
                 .bodyBorder(TableBorderStyle.builder()
                         .color("#BFBFBF").widthPt(0.5)
                         .line(BorderLine.SINGLE).edges(Edge.BOTTOM).build())
+                .columnAlignments(columnAlignments)
                 .build();
     }
 
